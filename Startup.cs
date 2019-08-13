@@ -10,8 +10,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StravaDiscordBot.Models;
 using StravaDiscordBot.Services.Discord;
 using StravaDiscordBot.Services.Parser;
+using StravaDiscordBot.Services.Storage;
 
 namespace StravaDiscordBot
 {
@@ -32,12 +34,15 @@ namespace StravaDiscordBot
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
-            services.AddSingleton<ICommand, JoinLeaderboardCommand>();
 
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
 
             services.AddSingleton(appOptions);
+
+            services.AddSingleton<IRepository<LeaderboardParticipant>, LeaderboardParticipantRepository>();
+            services.AddSingleton<ICommand, JoinLeaderboardCommand>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

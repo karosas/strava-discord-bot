@@ -8,6 +8,7 @@ namespace StravaDiscordBot
     public class AppOptions
     {
         public DiscordOptions Discord { get; set; }
+        public string StorageConnectionString { get; set; }
     }
 
     public class DiscordOptions
