@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Services.Parser;
 
 namespace StravaDiscordBot.Services.Discord
 {
@@ -13,11 +16,13 @@ namespace StravaDiscordBot.Services.Discord
     {
         private readonly CommandService _commandService;
         private readonly DiscordSocketClient _discordClient;
+        private readonly List<ICommand> _commands;
 
-        public CommandHandlingService(CommandService commandService, DiscordSocketClient discordClient)
+        public CommandHandlingService(CommandService commandService, DiscordSocketClient discordClient, IEnumerable<ICommand> commands)
         {
             _commandService = commandService;
             _discordClient = discordClient;
+            _commands = commands.ToList();
             // Hook CommandExecuted to handle post-command-execution logic.
             _commandService.CommandExecuted += CommandExecutedAsync;
             // Hook MessageReceived so we can process each message to see
@@ -33,21 +38,27 @@ namespace StravaDiscordBot.Services.Discord
             if (message.Source != MessageSource.User)
                 return;
 
-            // This value holds the offset where the prefix ends
-            var argPos = 0;
-            // Perform prefix check. You may want to replace this with
-            // (!message.HasCharPrefix('!', ref argPos))
-            // for a more traditional command format like !help.
-            if (!message.HasMentionPrefix(_discordClient.CurrentUser, ref argPos))
+            int argpos = 0;
+            if (!message.HasMentionPrefix(_discordClient.CurrentUser, ref argpos))
                 return;
 
-            var context = new SocketCommandContext(_discordClient, message);
-            // Perform the execution of the command. In this method,
-            // the command service will perform precondition and parsing check
-            // then execute the command if one is matched.
-            await _commandService.ExecuteAsync(context, argPos, _services);
-            // Note that normally a result will be returned by this format, but here
-            // we will handle the result in CommandExecutedAsync,
+            bool alreadyRespondedWithError = false;
+            foreach(var validCommand in _commands.Where(cmd => cmd.CanExecute(message, argpos)))
+            {
+                try
+                {
+                    await validCommand.Execute(message, argpos);
+                }
+                catch (InvalidCommandArgumentException e)
+                {
+                    // To avoid accidentally writing multiple error messages per one command
+                    if(!alreadyRespondedWithError)
+                    {
+                        alreadyRespondedWithError = true;
+                        await message.Channel.SendMessageAsync(e.Message);
+                    }
+                }
+            }
         }
 
         public async Task CommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)

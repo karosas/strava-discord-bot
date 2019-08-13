@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Builder;
@@ -11,15 +10,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Services.Discord;
+using StravaDiscordBot.Services.Parser;
 
 namespace StravaDiscordBot
 {
     public class Startup
     {
-        private IConfigurationRoot Configuration { get; set; }
-        public Startup(IConfigurationRoot config)
+        private IConfiguration Configuration { get; set; }
+        private DiscordSocketClient DiscordClient { get; set; }
+        private CommandHandlingService CommandHandlingService { get; set; }
+
+        public Startup(IConfiguration config)
         {
             Configuration = config;
         }
@@ -29,6 +31,8 @@ namespace StravaDiscordBot
             services.AddSingleton<CommandService>();
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
+
+            services.AddSingleton<ICommand, JoinLeaderboardCommand>();
 
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
@@ -44,7 +48,6 @@ namespace StravaDiscordBot
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseDiscordSocketCommandContextModule<PublicDiscordCommandModule>();
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
@@ -54,6 +57,31 @@ namespace StravaDiscordBot
                     await context.Response.WriteAsync("Hello World!");
                 });
             });
+            StartDiscordBot(app)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult();
         }
+
+        private async Task StartDiscordBot(IApplicationBuilder app)
+        {
+            var options = app.ApplicationServices.GetService<AppOptions>();
+            DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
+            DiscordClient.Log += LogAsync;
+            app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
+            await DiscordClient.LoginAsync(TokenType.Bot, options.Discord.Token);
+            await DiscordClient.StartAsync();
+
+            CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
+
+        }
+
+        private Task LogAsync(LogMessage log)
+        {
+            Console.WriteLine(log.ToString());
+
+            return Task.CompletedTask;
+        }
+
     }
 }
