@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UserSecretsId>strava-discord-bot-13mdf4j3-23jnejkn</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
