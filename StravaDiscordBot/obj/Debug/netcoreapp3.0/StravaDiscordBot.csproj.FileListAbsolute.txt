@@ -1,9 +1,0 @@
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\bin\Debug\netcoreapp3.0\appsettings.Development.json
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\bin\Debug\netcoreapp3.0\appsettings.json
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\bin\Debug\netcoreapp3.0\Properties\launchSettings.json
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\bin\Debug\netcoreapp3.0\StravaDiscordBot.exe
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\obj\Debug\netcoreapp3.0\StravaDiscordBot.csprojAssemblyReference.cache
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\obj\Debug\netcoreapp3.0\StravaDiscordBot.csproj.CoreCompileInputs.cache
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\obj\Debug\netcoreapp3.0\StravaDiscordBot.AssemblyInfoInputs.cache
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\obj\Debug\netcoreapp3.0\StravaDiscordBot.AssemblyInfo.cs
-C:\Users\eausv\Desktop\Projects\strava-discord-bot\StravaDiscordBot\obj\Debug\netcoreapp3.0\StravaDiscordBot.RazorTargetAssemblyInfo.cache
