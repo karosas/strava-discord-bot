@@ -153,7 +153,7 @@ namespace StravaDiscordBot.Services.Storage
                 _table = await CreateTable();
             try
             {
-                await _table.ExecuteAsync(TableOperation.InsertOrMerge(entity));
+                await _table.ExecuteAsync(TableOperation.InsertOrReplace(entity));
             }
             catch (StorageException e)
             {
@@ -163,6 +163,4 @@ namespace StravaDiscordBot.Services.Storage
             }
         }
     }
-    }
 }
-

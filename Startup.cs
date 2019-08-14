@@ -11,8 +11,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StravaDiscordBot.Models;
+using StravaDiscordBot.Services;
 using StravaDiscordBot.Services.Discord;
-using StravaDiscordBot.Services.Parser;
+using StravaDiscordBot.Services.Discord.Commands;
 using StravaDiscordBot.Services.Storage;
 
 namespace StravaDiscordBot
@@ -29,39 +30,38 @@ namespace StravaDiscordBot
         }
         public void ConfigureServices(IServiceCollection services)
         {
+            var appOptions = new AppOptions();
+            Configuration.Bind(appOptions);
+            services.AddSingleton(appOptions);
+
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
-
-            var appOptions = new AppOptions();
-            Configuration.Bind(appOptions);
-
-            services.AddSingleton(appOptions);
-
             services.AddSingleton<IRepository<LeaderboardParticipant>, LeaderboardParticipantRepository>();
+            services.AddSingleton<IStravaService, StravaService>();
             services.AddSingleton<ICommand, JoinLeaderboardCommand>();
+
+            services.AddMvc();
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
+            app.UseMvc(routes =>
             {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Hello World!");
-                });
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
             });
+
             StartDiscordBot(app)
                 .ConfigureAwait(false)
                 .GetAwaiter()
@@ -78,7 +78,6 @@ namespace StravaDiscordBot
             await DiscordClient.StartAsync();
 
             CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
-
         }
 
         private Task LogAsync(LogMessage log)
