@@ -10,6 +10,7 @@ namespace StravaDiscordBot
         public DiscordOptions Discord { get; set; }
         public StravaOptions Strava { get; set; }
         public string StorageConnectionString { get; set; }
+        public string BaseUrl { get; set; }
     }
 
     public class DiscordOptions

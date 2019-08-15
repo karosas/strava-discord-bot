@@ -117,7 +117,7 @@ namespace StravaDiscordBot.Services
                 {
                     { "client_id", stravaOptions.ClientId },
                     { "response_type", "code" },
-                    { "redirect_uri", $"http://localhost:5000/strava/callback/{channelId}/{discordUserId}" },
+                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{channelId}/{discordUserId}" },
                     { "approval_prompt", "force" },
                     { "scope", "read,activity:read" }
                 });
