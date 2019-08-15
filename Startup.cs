@@ -42,6 +42,7 @@ namespace StravaDiscordBot
             services.AddSingleton<IRepository<LeaderboardParticipant>, LeaderboardParticipantRepository>();
             services.AddSingleton<IStravaService, StravaService>();
             services.AddSingleton<ICommand, JoinLeaderboardCommand>();
+            services.AddSingleton<ICommand, ShowLeaderboardCommand>();
 
             services.AddMvc();
 
