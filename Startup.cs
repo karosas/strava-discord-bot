@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
 using StravaDiscordBot.Services.Discord;
@@ -23,10 +25,18 @@ namespace StravaDiscordBot
         private IConfiguration Configuration { get; set; }
         private DiscordSocketClient DiscordClient { get; set; }
         private CommandHandlingService CommandHandlingService { get; set; }
+        private ILogger<Startup> _logger;
 
-        public Startup(IConfiguration config)
+        public Startup(IConfiguration config, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
-            Configuration = config;
+            var builder = new ConfigurationBuilder()
+               .SetBasePath(env.ContentRootPath)
+               .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+               .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+               .AddEnvironmentVariables("ASPNETCORE_")
+               .AddUserSecrets("strava-discord-bot-13mdf4j3-23jnejkn");
+
+            Configuration = builder.Build();
         }
         public void ConfigureServices(IServiceCollection services)
         {
@@ -52,8 +62,9 @@ namespace StravaDiscordBot
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env, ILogger<Startup> logger)
         {
+            _logger = logger;
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -80,6 +91,7 @@ namespace StravaDiscordBot
         private async Task StartDiscordBot(IApplicationBuilder app)
         {
             var options = app.ApplicationServices.GetService<AppOptions>();
+            Console.WriteLine(JsonConvert.SerializeObject(options, Formatting.Indented));
             DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
             DiscordClient.Log += LogAsync;
             app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
@@ -91,10 +103,8 @@ namespace StravaDiscordBot
 
         private Task LogAsync(LogMessage log)
         {
-            Console.WriteLine(log.ToString());
-
+            _logger.LogInformation(log.Exception, $"[{log.Severity}] {log.Message}");
             return Task.CompletedTask;
         }
-
     }
 }

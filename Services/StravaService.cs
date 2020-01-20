@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -29,12 +30,14 @@ namespace StravaDiscordBot.Services
         private readonly AppOptions _options;
         private readonly IRepository<LeaderboardParticipant> _leaderboardRepository;
         private readonly IRemoteItService _remoteService;
+        private readonly ILogger<StravaService> _logger;
 
-        public StravaService(AppOptions options, IRepository<LeaderboardParticipant> leaderboardRepository, IRemoteItService remoteService)
+        public StravaService(AppOptions options, IRepository<LeaderboardParticipant> leaderboardRepository, IRemoteItService remoteService, ILogger<StravaService> logger)
         {
             _options = options;
             _leaderboardRepository = leaderboardRepository;
             _remoteService = remoteService;
+            _logger = logger;
         }
 
         public async Task CreateLeaderboardParticipantAsync(string channelId, string discordUserId, StravaCodeExchangeResult stravaExchangeResult)
@@ -133,8 +136,9 @@ namespace StravaDiscordBot.Services
                 var participant = await _leaderboardRepository.GetById(channelId, discordUserId);
                 return participant != null;
             }
-            catch
+            catch(Exception e)
             {
+                _logger.LogWarning(e, "Failed fetching participant");
                 // Assumption for now, probably should be handled better in the future
                 return true;
             }

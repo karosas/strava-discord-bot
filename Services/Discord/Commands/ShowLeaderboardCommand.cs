@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
@@ -14,9 +15,12 @@ namespace StravaDiscordBot.Services.Discord.Commands
     public class ShowLeaderboardCommand : ICommand
     {
         private readonly IStravaService _stravaService;
-        public ShowLeaderboardCommand(IStravaService stravaService)
+        private readonly ILogger<ShowLeaderboardCommand> _logger;
+
+        public ShowLeaderboardCommand(IStravaService stravaService, ILogger<ShowLeaderboardCommand> logger)
         {
             _stravaService = stravaService;
+            _logger = logger;
         }
 
         public bool CanExecute(SocketUserMessage message, int argPos)
@@ -28,6 +32,8 @@ namespace StravaDiscordBot.Services.Discord.Commands
         {
             if (!CanExecute(message, argPos))
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `leaderboard`");
+
+            _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
 
             var groupedActivitiesByParticipant = await _stravaService.GetAllLeaderboardActivitiesForChannelIdAsync(message.Channel.Id.ToString());
             var leaderboardMessage = FormatActivitiesIntoLeaderboardMessage(groupedActivitiesByParticipant);

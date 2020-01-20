@@ -30,5 +30,6 @@ namespace StravaDiscordBot
         public string Username { get; set; }
         public string Password { get; set; }
         public string DeviceServiceId { get; set; }
+        public string DeviceName { get; set; }
     }
 }
