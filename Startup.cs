@@ -6,7 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,6 +33,8 @@ namespace StravaDiscordBot
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
             services.AddSingleton(appOptions);
+
+            services.AddSingleton<IRemoteItService, RemoteItService>();
 
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
@@ -61,6 +63,11 @@ namespace StravaDiscordBot
                 routes.MapRoute(
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
+            });
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.All
             });
 
             StartDiscordBot(app)

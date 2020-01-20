@@ -19,7 +19,7 @@ namespace StravaDiscordBot.Services
         Task<StravaCodeExchangeResult> ExchangeCodeAsync(string code);
         Task CreateLeaderboardParticipantAsync(string channelId, string discordUserId, StravaCodeExchangeResult stravaExchangeResult);
         Task<bool> ParticipantAlreadyExistsAsync(string channelId, string discordUserId);
-        string GetOAuthUrl(string channelId, string discordUserId);
+        Task<string> GetOAuthUrl(string channelId, string discordUserId);
         Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId);
         Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetAllLeaderboardActivitiesForChannelIdAsync(string channelId);
         Task RefreshAccessTokenAsync(LeaderboardParticipant participant);
@@ -28,11 +28,13 @@ namespace StravaDiscordBot.Services
     {
         private readonly AppOptions _options;
         private readonly IRepository<LeaderboardParticipant> _leaderboardRepository;
+        private readonly IRemoteItService _remoteService;
 
-        public StravaService(AppOptions options, IRepository<LeaderboardParticipant> leaderboardRepository)
+        public StravaService(AppOptions options, IRepository<LeaderboardParticipant> leaderboardRepository, IRemoteItService remoteService)
         {
             _options = options;
             _leaderboardRepository = leaderboardRepository;
+            _remoteService = remoteService;
         }
 
         public async Task CreateLeaderboardParticipantAsync(string channelId, string discordUserId, StravaCodeExchangeResult stravaExchangeResult)
@@ -109,15 +111,16 @@ namespace StravaDiscordBot.Services
             }
         }
 
-        public string GetOAuthUrl(string channelId, string discordUserId)
+        public async Task<string> GetOAuthUrl(string channelId, string discordUserId)
         {
             var stravaOptions = _options.Strava;
+            var currentProxyUrl = await _remoteService.GetCurrentProxyUrl();
             return QueryHelpers.AddQueryString("http://www.strava.com/oauth/authorize",
                 new Dictionary<string, string>
                 {
                     { "client_id", stravaOptions.ClientId },
                     { "response_type", "code" },
-                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{channelId}/{discordUserId}" },
+                    { "redirect_uri", $"{currentProxyUrl}/strava/callback/{channelId}/{discordUserId}" },
                     { "approval_prompt", "force" },
                     { "scope", "read,activity:read" }
                 });
@@ -168,7 +171,5 @@ namespace StravaDiscordBot.Services
                 await _leaderboardRepository.Save(participant);
             }
         }
-
-
     }
 }

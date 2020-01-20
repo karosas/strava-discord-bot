@@ -32,7 +32,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
                 throw new InvalidCommandArgumentException($"Whoops, it seems like you're already participating in the leaderboard");
 
             var dmChannel = await message.Author.GetOrCreateDMChannelAsync();
-            await dmChannel.SendMessageAsync($"Hey, {message.Author.Mention} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(message.Channel.Id.ToString(), message.Author.Id.ToString())}");
+            await dmChannel.SendMessageAsync($"Hey, {message.Author.Mention} ! Please go to this url to allow me check out your Strava activities: {await _stravaService.GetOAuthUrl(message.Channel.Id.ToString(), message.Author.Id.ToString())}");
         }
     }
 }
