@@ -33,6 +33,7 @@ namespace StravaDiscordBot
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
             services.AddSingleton(appOptions);
+            services.AddLogging();
 
             services.AddSingleton<IRemoteItService, RemoteItService>();
 
