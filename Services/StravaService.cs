@@ -4,14 +4,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
-using StravaDiscordBot.Services.Storage;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services
 {
@@ -20,7 +20,7 @@ namespace StravaDiscordBot.Services
         Task<StravaCodeExchangeResult> ExchangeCodeAsync(string code);
         Task CreateLeaderboardParticipantAsync(string channelId, string discordUserId, StravaCodeExchangeResult stravaExchangeResult);
         Task<bool> ParticipantAlreadyExistsAsync(string channelId, string discordUserId);
-        Task<string> GetOAuthUrl(string channelId, string discordUserId);
+        string GetOAuthUrl(string channelId, string discordUserId);
         Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId);
         Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetAllLeaderboardActivitiesForChannelIdAsync(string channelId);
         Task RefreshAccessTokenAsync(LeaderboardParticipant participant);
@@ -28,22 +28,22 @@ namespace StravaDiscordBot.Services
     public class StravaService : IStravaService
     {
         private readonly AppOptions _options;
-        private readonly IRepository<LeaderboardParticipant> _leaderboardRepository;
-        private readonly IRemoteItService _remoteService;
         private readonly ILogger<StravaService> _logger;
+        private readonly BotDbContext _dbContext;
 
-        public StravaService(AppOptions options, IRepository<LeaderboardParticipant> leaderboardRepository, IRemoteItService remoteService, ILogger<StravaService> logger)
+        public StravaService(AppOptions options, BotDbContext dbContext, ILogger<StravaService> logger)
         {
             _options = options;
-            _leaderboardRepository = leaderboardRepository;
-            _remoteService = remoteService;
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         public async Task CreateLeaderboardParticipantAsync(string channelId, string discordUserId, StravaCodeExchangeResult stravaExchangeResult)
         {
+            _logger.LogInformation($"Creating leaderboard participant. channel: {channelId} | discord user: {discordUserId}");
             var leaderboardParticipant = new LeaderboardParticipant(channelId, discordUserId, stravaExchangeResult.AccessToken, stravaExchangeResult.RefreshToken);
-            await _leaderboardRepository.Save(leaderboardParticipant);
+            await _dbContext.Participants.AddAsync(leaderboardParticipant);
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task<StravaCodeExchangeResult> ExchangeCodeAsync(string code)
@@ -62,7 +62,10 @@ namespace StravaDiscordBot.Services
 
                 var result = await http.PostAsync(url, null);
                 if(!result.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Strava code exchange failed, Status: {result.StatusCode}");
                     throw new StravaException($"Exchange code failed with status code {result.StatusCode}");
+                }
 
                 var responseContent = await result.Content.ReadAsStringAsync();
                 var responseContentSerialized = JObject.Parse(responseContent);
@@ -70,15 +73,19 @@ namespace StravaDiscordBot.Services
             }
         }
 
-        public Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId)
+        public async Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId)
         {
-            return _leaderboardRepository.GetForPartition(channelId);
+            _logger.LogInformation($"Fetching all participants within channel {channelId}");
+            var participants = await _dbContext.Participants.ToListAsync();
+            return participants.Where(x => x.ChannelId == channelId).ToList();
         }
 
         public async Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetAllLeaderboardActivitiesForChannelIdAsync(string channelId)
         {
+            _logger.LogInformation($"Fetching all activities within channel {channelId}");
             var result = new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
-            var participants = await _leaderboardRepository.GetForPartition(channelId);
+            var participants = await GetAllParticipantsForChannelAsync(channelId);
+            _logger.LogInformation($"Found {participants?.Count} participants wtihing channels leaderboard");
             foreach (var participant in participants)
             {
                 result.Add(participant, await Get7DaysActivitiesForParticipant(participant));
@@ -88,6 +95,7 @@ namespace StravaDiscordBot.Services
 
         private async Task<List<DetailedActivity>> Get7DaysActivitiesForParticipant(LeaderboardParticipant participant, bool isRetry = false)
         {
+            _logger.LogInformation($"Fetching 7 days of activities for {participant.GetDiscordMention()}");
             using(var http = new HttpClient())
             {
                 http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", participant.StravaAccessToken);
@@ -103,9 +111,11 @@ namespace StravaDiscordBot.Services
                 {
                     if(activityResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized && !isRetry)
                     {
+                        _logger.LogWarning($"Received 401 from strava, attempting to refresh access token");
                         await RefreshAccessTokenAsync(participant);
                         return await Get7DaysActivitiesForParticipant(participant, true);
                     }
+                    _logger.LogError($"Failed to fetch activities");
                     throw new StravaException($"Failed to fetch activities, status code: {activityResponse.StatusCode}");
                 }
 
@@ -114,10 +124,10 @@ namespace StravaDiscordBot.Services
             }
         }
 
-        public async Task<string> GetOAuthUrl(string channelId, string discordUserId)
+        public string GetOAuthUrl(string channelId, string discordUserId)
         {
             var stravaOptions = _options.Strava;
-            var currentProxyUrl = await _remoteService.GetCurrentProxyUrl();
+            var currentProxyUrl = _options.BaseUrl;
             return QueryHelpers.AddQueryString("http://www.strava.com/oauth/authorize",
                 new Dictionary<string, string>
                 {
@@ -133,8 +143,8 @@ namespace StravaDiscordBot.Services
         {
             try
             {
-                var participant = await _leaderboardRepository.GetById(channelId, discordUserId);
-                return participant != null;
+                var participants = await GetAllParticipantsForChannelAsync(channelId);
+                return participants.FirstOrDefault(x => x.DiscordUserId == discordUserId) != null;
             }
             catch(Exception e)
             {
@@ -152,6 +162,7 @@ namespace StravaDiscordBot.Services
 
         public async Task RefreshAccessTokenAsync(LeaderboardParticipant participant)
         {
+            _logger.LogInformation($"Refreshing access token for {participant.GetDiscordMention()}");
             using (var http = new HttpClient())
             {
                 var stravaOptions = _options.Strava;
@@ -166,13 +177,17 @@ namespace StravaDiscordBot.Services
 
                 var result = await http.PostAsync(url, null);
                 if (!result.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Failed to refresh access token for {participant.GetDiscordMention()}");
                     throw new StravaException($"Exchange code failed with status code {result.StatusCode}");
+                }
 
                 var responseContent = await result.Content.ReadAsStringAsync();
                 var responseContentSerialized = JObject.Parse(responseContent);
 
                 participant.UpdateWithNewTokens( new StravaCodeExchangeResult(responseContentSerialized["access_token"].ToString(), responseContentSerialized["refresh_token"].ToString()));
-                await _leaderboardRepository.Save(participant);
+                await _dbContext.Participants.AddAsync(participant);
+                await _dbContext.SaveChangesAsync();
             }
         }
     }

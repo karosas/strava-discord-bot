@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
@@ -52,7 +51,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
             var index = 1;
             foreach(var distance in topDistances)
             {
-                builder.AppendLine($"{index}. {distance.Key.DiscordMention} @ {distance.Value / 1000} km");
+                builder.AppendLine($"{index}. {distance.Key.GetDiscordMention()} @ {distance.Value / 1000} km");
                 index++;
             }
             return builder.ToString();

@@ -12,11 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
 using StravaDiscordBot.Services.Discord;
 using StravaDiscordBot.Services.Discord.Commands;
-using StravaDiscordBot.Services.Storage;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot
 {
@@ -27,7 +26,7 @@ namespace StravaDiscordBot
         private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IConfiguration config, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
+        public Startup(IConfiguration config,IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                .SetBasePath(env.ContentRootPath)
@@ -45,24 +44,23 @@ namespace StravaDiscordBot
             services.AddSingleton(appOptions);
             services.AddLogging();
 
-            services.AddSingleton<IRemoteItService, RemoteItService>();
-
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
-            services.AddSingleton<IRepository<LeaderboardParticipant>, LeaderboardParticipantRepository>();
             services.AddSingleton<IStravaService, StravaService>();
             services.AddSingleton<ICommand, JoinLeaderboardCommand>();
             services.AddSingleton<ICommand, ShowLeaderboardCommand>();
 
-            services.AddMvc();
+            services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
 
+            services.AddControllers();
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
             _logger = logger;
             if (env.IsDevelopment())
@@ -70,17 +68,24 @@ namespace StravaDiscordBot
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
+            app.UseRouting();
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.All
             });
+
+            app.UseEndpoints(x => {
+                x.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+            });
+
+            var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
+            using (var serviceScope = serviceScopeFactory.CreateScope())
+            {
+                _logger.LogInformation("Ensuring database is created");
+                var dbContext = serviceScope.ServiceProvider.GetService<BotDbContext>();
+                var db = dbContext.Database.EnsureCreated();
+            }
 
             StartDiscordBot(app)
                 .ConfigureAwait(false)

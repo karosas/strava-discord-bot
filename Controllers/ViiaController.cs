@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Services;
