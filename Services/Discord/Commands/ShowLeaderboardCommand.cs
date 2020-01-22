@@ -11,7 +11,7 @@ using StravaDiscordBot.Models.Strava;
 namespace StravaDiscordBot.Services.Discord.Commands
 {
     // TODO: Make more generic
-    public class ShowLeaderboardCommand : ICommand
+    public class ShowLeaderboardCommand : CommandBase
     {
         private readonly IStravaService _stravaService;
         private readonly ILogger<ShowLeaderboardCommand> _logger;
@@ -22,12 +22,10 @@ namespace StravaDiscordBot.Services.Discord.Commands
             _logger = logger;
         }
 
-        public bool CanExecute(SocketUserMessage message, int argPos)
-        {
-            return message.Content.Substring(argPos).Trim().ToLower().StartsWith("leaderboard");
-        }
+        public override string CommandName => "leaderboard";
+        public override string Descriptions => "Print current leaderboard";
 
-        public async Task Execute(SocketUserMessage message, int argPos)
+        public override async Task Execute(SocketUserMessage message, int argPos)
         {
             if (!CanExecute(message, argPos))
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `leaderboard`");

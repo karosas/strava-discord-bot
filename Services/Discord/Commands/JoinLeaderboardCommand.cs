@@ -5,7 +5,7 @@ using StravaDiscordBot.Exceptions;
 
 namespace StravaDiscordBot.Services.Discord.Commands
 {
-    public class JoinLeaderboardCommand : ICommand
+    public class JoinLeaderboardCommand : CommandBase
     {
         private readonly IStravaService _stravaService;
         private readonly ILogger<JoinLeaderboardCommand> _logger;
@@ -16,12 +16,10 @@ namespace StravaDiscordBot.Services.Discord.Commands
             _logger = logger;
         }
 
-        public bool CanExecute(SocketUserMessage message, int argPos)
-        {
-            return message.Content.Substring(argPos).Trim().ToLower().StartsWith("join");
-        }
+        public override string CommandName => "join";
+        public override string Descriptions => "Join the leaderboard.";
 
-        public async Task Execute(SocketUserMessage message, int argPos)
+        public override async Task Execute(SocketUserMessage message, int argPos)
         {
             if (!CanExecute(message, argPos))
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `join`");

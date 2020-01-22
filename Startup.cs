@@ -52,6 +52,7 @@ namespace StravaDiscordBot
             services.AddSingleton<IStravaService, StravaService>();
             services.AddSingleton<ICommand, JoinLeaderboardCommand>();
             services.AddSingleton<ICommand, ShowLeaderboardCommand>();
+            services.AddSingleton<IHelpCommand, HelpCommand>();
 
             services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
 

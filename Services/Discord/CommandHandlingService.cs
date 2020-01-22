@@ -15,10 +15,11 @@ namespace StravaDiscordBot.Services.Discord
         private readonly DiscordSocketClient _discordClient;
         private readonly List<ICommand> _commands;
 
-        public CommandHandlingService(DiscordSocketClient discordClient, IEnumerable<ICommand> commands)
+        public CommandHandlingService(DiscordSocketClient discordClient, IEnumerable<ICommand> commands, IHelpCommand helpCommand)
         {
             _discordClient = discordClient;
             _commands = commands.ToList();
+            _commands.Add(helpCommand);
             _discordClient.MessageReceived += MessageReceivedAsync;
         }
 
