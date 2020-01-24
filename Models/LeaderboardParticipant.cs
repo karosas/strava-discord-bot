@@ -15,7 +15,7 @@ namespace StravaDiscordBot.Models
         public string ChannelId { get; set; }
         public string StravaAccessToken { get; set; }
         public string StravaRefreshToken { get; set; }
-        public string GetDiscordMention() => $"<@{DiscordUserId}>";
+        public string GetDiscordMention(bool silent = false) => silent ? $"`<@{DiscordUserId}>`" : $"<@{DiscordUserId}>";
         public LeaderboardParticipant() {}
 
         // Don't like amount of the constructor parameters, but good enough for now

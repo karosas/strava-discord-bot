@@ -156,6 +156,6 @@ namespace StravaDiscordBot.Models.Strava
         public bool HasKudoed { get; set; }
 
         [JsonProperty("suffer_score")]
-        public long SufferScore { get; set; }
+        public long? SufferScore { get; set; }
     }
 }

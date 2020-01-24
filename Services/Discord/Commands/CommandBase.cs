@@ -10,7 +10,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
         public bool CanExecute(SocketUserMessage message, int argPos)
         {
-            return message.Content.Substring(argPos).Trim().ToLower().StartsWith("join");
+            return message.Content.Substring(argPos).Trim().ToLower().StartsWith(CommandName);
         }
 
         public abstract Task Execute(SocketUserMessage message, int argPos);

@@ -9,7 +9,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
 {
     public interface IHelpCommand : ICommand { }
 
-    public class HelpCommand : IHelpCommand
+    public class HelpCommand : CommandBase, IHelpCommand
     {
         private readonly IEnumerable<ICommand> _commands;
 
@@ -18,16 +18,11 @@ namespace StravaDiscordBot.Services.Discord.Commands
             _commands = commands;
         }
 
-        public string CommandName => "help";
+        public override string CommandName => "help";
 
-        public string Descriptions => "Show help including available commands";
+        public override string Descriptions => "Show help including available commands";
 
-        public bool CanExecute(SocketUserMessage message, int argPos)
-        {
-            return true;
-        }
-
-        public async Task Execute(SocketUserMessage message, int argPos)
+        public override async Task Execute(SocketUserMessage message, int argPos)
         {
             await message.Channel.SendMessageAsync(BuildHelpCommandText());
         }
