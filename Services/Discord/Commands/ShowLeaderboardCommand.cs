@@ -36,9 +36,9 @@ namespace StravaDiscordBot.Services.Discord.Commands
             if (!CanExecute(message, argPos))
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `{CommandName}`");
 
-            _silent = GetCleanCommandText(message, argPos).Contains("silent");
-
             _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
+
+            _silent = GetCleanCommandText(message, argPos).Contains("silent");
             var start = DateTime.Now.AddDays(-7);
             var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(message.Channel.Id.ToString(), start).ConfigureAwait(false);
             var leaderboardHeadline = $"Leaderboard from  {start.ToString("yyyy MMMM dd")} to {DateTime.Now.ToString("yyyy MMMM dd")}\n";
@@ -59,7 +59,6 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
         private string FormatActivitiesForType(Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict, string type)
         {
-            _logger.LogInformation($"Generating leaderboard for '{type}' category");
             var categoryResult = GetTopResultsForCategory(participantActivitiesDict, x => x.Type == type);
             var builder = new StringBuilder();
 
@@ -98,7 +97,6 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
         private CategoryResult GetTopResultsForCategory(Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict, Func<DetailedActivity, bool> activityFilter)
         {
-            _logger.LogInformation($"Calculating distances for {participantActivitiesDict.Keys.Count} participants.");
             var distanceResult = new List<ParticipantResult>();
             var altitudeResult = new List<ParticipantResult>();
             var powerResult = new List<ParticipantResult>();
@@ -106,22 +104,14 @@ namespace StravaDiscordBot.Services.Discord.Commands
             foreach (var participantActivityPair in participantActivitiesDict)
             {
                 var matchingActivities = participantActivityPair.Value.Where(activityFilter);
-                _logger.LogInformation($"Activities before filter: {participantActivityPair.Value.Count} , after: {matchingActivities.Count()}");
                 distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.Distance)));
                 altitudeResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.TotalElevationGain)));
-                _logger.LogInformation($"Elapsed times {string.Join(',', participantActivityPair.Value.Select(x => x.ElapsedTime))}");
-                _logger.LogInformation($"Powers {string.Join(',', participantActivityPair.Value.Select(x => x.WeightedAverageWatts))}");
-
                 powerResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
                                                                                         .Where(x => x.ElapsedTime > 20 * 60)
                                                                                         .Select(x => x.WeightedAverageWatts)
                                                                                         .DefaultIfEmpty()
                                                                                         .Max()));
             }
-
-            _logger.LogInformation($"Total distance results {distanceResult.Count}");
-            _logger.LogInformation($"Total altitude results {altitudeResult.Count}");
-            _logger.LogInformation($"Total power results {powerResult.Count}");
 
             return new CategoryResult
             {
