@@ -40,7 +40,7 @@ namespace StravaDiscordBot.Services.Discord
             {
                 try
                 {
-                    await validCommand.Execute(message, argpos);
+                    await validCommand.Execute(message, argpos).ConfigureAwait(false);
                 }
                 catch (InvalidCommandArgumentException e)
                 {
@@ -48,7 +48,7 @@ namespace StravaDiscordBot.Services.Discord
                     if(!alreadyRespondedWithError)
                     {
                         alreadyRespondedWithError = true;
-                        await message.Channel.SendMessageAsync(e.Message);
+                        await message.Channel.SendMessageAsync(e.Message).ConfigureAwait(false);
                     }
                 }
             }

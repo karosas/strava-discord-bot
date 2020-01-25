@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Services;
@@ -20,16 +21,16 @@ namespace StravaDiscordBot.Controllers
         [HttpGet("callback/{channelId}/{discordUserId}")]
         public async Task<IActionResult> StravaCallback(string channelId, string discordUserId, [FromQuery(Name = "code")] string code, [FromQuery(Name = "scope")] string scope)
         {
-            if(!scope.Contains("activity:read"))
+            if(scope == null || !scope.Contains("activity:read", StringComparison.InvariantCultureIgnoreCase))
                 return Ok("Failed to authorize user, read activities permission is needed");
 
-            if(await _stravaService.ParticipantAlreadyExistsAsync(channelId, discordUserId))
+            if(await _stravaService.ParticipantAlreadyExistsAsync(channelId, discordUserId).ConfigureAwait(false))
                 return Ok("It seems this discord user for this channel has already connected to Strava");
 
             try
             {
-                var stravaExchangeResult = await _stravaService.ExchangeCodeAsync(code);
-                await _stravaService.CreateLeaderboardParticipantAsync(channelId, discordUserId, stravaExchangeResult);
+                var stravaExchangeResult = await _stravaService.ExchangeCodeAsync(code).ConfigureAwait(false);
+                await _stravaService.CreateLeaderboardParticipantAsync(channelId, discordUserId, stravaExchangeResult).ConfigureAwait(false);
                 return Ok("You are now part of the leaderboard");
             }
             catch (StravaException e)

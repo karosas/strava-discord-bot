@@ -12,7 +12,7 @@ using StravaDiscordBot.Models.Strava;
 namespace StravaDiscordBot.Services.Discord.Commands
 {
     // TODO: Make more generic
-    public class ShowLeaderboardCommand : CommandBase
+    public partial class ShowLeaderboardCommand : CommandBase
     {
         private readonly IStravaService _stravaService;
         private readonly ILogger<ShowLeaderboardCommand> _logger;
@@ -33,18 +33,17 @@ namespace StravaDiscordBot.Services.Discord.Commands
         public override async Task Execute(SocketUserMessage message, int argPos)
         {
             if (!CanExecute(message, argPos))
-                throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `leaderboard`");
+                throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `{CommandName}`");
 
-            _silent = message.Content.Substring(argPos).Trim().ToLower().Contains("silent");
+            _silent = GetCleanCommandText(message, argPos).Contains("silent");
 
             _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
-            var end = DateTime.Now;
-            var start = end.AddDays(-7);
-            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesForPeriod(message.Channel.Id.ToString(), start, end);
-            var leaderboardHeadline = $"Leaderboard from  {start.ToString("yyyy MMMM dd")} to {end.ToString("yyyy MMMM dd")}\n";
+            var start = DateTime.Now.AddDays(-7);
+            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(message.Channel.Id.ToString(), start).ConfigureAwait(false);
+            var leaderboardHeadline = $"Leaderboard from  {start.ToString("yyyy MMMM dd")} to {DateTime.Now.ToString("yyyy MMMM dd")}\n";
             var leaderboardMessage = FormatActivitiesIntoLeaderboardMessage(groupedActivitiesByParticipant);
 
-            await message.Channel.SendMessageAsync($"{leaderboardHeadline}\n{leaderboardMessage}");
+            await message.Channel.SendMessageAsync($"{leaderboardHeadline}\n{leaderboardMessage}").ConfigureAwait(false);
         }
         private string FormatActivitiesIntoLeaderboardMessage(Dictionary<LeaderboardParticipant, List<DetailedActivity>> activities) 
         {
@@ -91,7 +90,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
             return builder.ToString();
         }
 
-        private string GetParticipantPlaceString(int index, string participant, double value, string unit)
+        private static string GetParticipantPlaceString(int index, string participant, double value, string unit)
         {
             return $"{index}. {participant} @ {(value):n1} {unit}";
         }
@@ -129,25 +128,6 @@ namespace StravaDiscordBot.Services.Discord.Commands
                 Altitude = altitudeResult.OrderByDescending(x => x.Value).ToList(),
                 Power = powerResult.OrderByDescending(x => x.Value).ToList()
             };
-        }
-
-        public class CategoryResult
-        {
-            public List<ParticipantResult> Distance { get; set; }
-            public List<ParticipantResult> Altitude { get; set; }
-            public List<ParticipantResult> Power { get; set; }
-        }
-
-        public class ParticipantResult
-        {
-            public ParticipantResult(LeaderboardParticipant participant, double value)
-            {
-                Participant = participant;
-                Value = value;
-            }
-
-            public LeaderboardParticipant Participant { get; set; }
-            public double Value { get; set; }
         }
     }
 }

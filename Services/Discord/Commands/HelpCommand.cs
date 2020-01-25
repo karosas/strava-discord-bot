@@ -24,7 +24,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
         public override async Task Execute(SocketUserMessage message, int argPos)
         {
-            await message.Channel.SendMessageAsync(BuildHelpCommandText());
+            await message.Channel.SendMessageAsync(BuildHelpCommandText()).ConfigureAwait(false);
         }
 
         private string BuildHelpCommandText()
