@@ -22,6 +22,7 @@ namespace StravaDiscordBot
     {
         private IConfiguration Configuration { get; set; }
         private DiscordSocketClient DiscordClient { get; set; }
+        private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
         public Startup(IWebHostEnvironment env)
@@ -105,6 +106,8 @@ namespace StravaDiscordBot
             app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
             await DiscordClient.LoginAsync(TokenType.Bot, options.Discord.Token).ConfigureAwait(false);
             await DiscordClient.StartAsync().ConfigureAwait(false);
+
+            CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
         }
 
         private Task LogAsync(LogMessage log)
