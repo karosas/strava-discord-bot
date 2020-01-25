@@ -28,6 +28,14 @@ namespace StravaDiscordBot.Services.Commands
         public override string CommandName => "leaderboard";
         public override string Descriptions => "Print current leaderboard";
 
+        public bool CanExecute(SocketUserMessage message, int argPos)
+        {
+            return GetCleanCommandText(message, argPos)
+                .StartsWith(CommandName, StringComparison.InvariantCultureIgnoreCase)
+                && IsWrittenByAdmin(message) 
+                && IsWrittenInWhitelistedChannel(message);
+        }
+
         public override async Task Execute(SocketUserMessage message, int argPos)
         {
             if (!CanExecute(message, argPos))
