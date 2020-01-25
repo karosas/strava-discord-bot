@@ -28,9 +28,9 @@ namespace StravaDiscordBot.Helpers
             {
                 case Constants.ChallengeType.Distance:
                     return $"{value:n1} km";
-                case (Constants.ChallengeType.Elevation):
+                case Constants.ChallengeType.Elevation:
                     return $"{value:n0} m";
-                case (Constants.ChallengeType.Power):
+                case Constants.ChallengeType.Power:
                     return $"{value:n0} W";
                 default:
                     return $"{value:n1}";

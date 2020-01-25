@@ -78,7 +78,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
             foreach (var participantActivityPair in participantActivitiesDict)
             {
                 var matchingActivities = participantActivityPair.Value.Where(activityFilter);
-                distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.Distance)));
+                distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.Distance / 1000))); // meters to km 
                 altitudeResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.TotalElevationGain)));
                 powerResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
                                                                                         .Where(x => x.ElapsedTime > 20 * 60)
