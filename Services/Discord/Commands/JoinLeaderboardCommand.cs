@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.Discord.Commands
 {
@@ -10,7 +11,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
         private readonly IStravaService _stravaService;
         private readonly ILogger<JoinLeaderboardCommand> _logger;
 
-        public JoinLeaderboardCommand(IStravaService stravaService, ILogger<JoinLeaderboardCommand> logger)
+        public JoinLeaderboardCommand(AppOptions options, BotDbContext context, IStravaService stravaService, ILogger<JoinLeaderboardCommand> logger) : base(options, context)
         {
             _stravaService = stravaService;
             _logger = logger;

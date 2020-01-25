@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.Discord.Commands
 {
@@ -13,7 +14,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
     {
         private readonly IEnumerable<ICommand> _commands;
 
-        public HelpCommand(IEnumerable<ICommand> commands)
+        public HelpCommand(AppOptions options, BotDbContext context, IEnumerable<ICommand> commands) : base(options, context)
         {
             _commands = commands;
         }
@@ -32,7 +33,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
             var builder = new StringBuilder();
             builder.AppendLine("This is a Discord Strava Leaderboard Bot.");
             builder.AppendLine("Commands:");
-            foreach(var command in _commands)
+            foreach (var command in _commands)
             {
                 builder.AppendLine($"**{command.CommandName}** - {command.CommandName}");
             }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.Discord.Commands
 {
@@ -17,7 +18,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
         private readonly IStravaService _stravaService;
         private readonly ILogger<ShowLeaderboardCommand> _logger;
 
-        public ShowLeaderboardCommand(IStravaService stravaService, ILogger<ShowLeaderboardCommand> logger)
+        public ShowLeaderboardCommand(AppOptions options, BotDbContext context, IStravaService stravaService, ILogger<ShowLeaderboardCommand> logger) : base(options, context)
         {
             _stravaService = stravaService;
             _logger = logger;
@@ -80,7 +81,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
             }
             builder.AppendLine();
 
-            builder.AppendLine("*Highest weighted power ride* (only rides longer than 20 minutes are considered)");
+            builder.AppendLine("*Highest weighted power ride* (only rides longer than 20 minutes are considered)\n");
             index = 0;
             foreach (var powerResult in categoryResult.Power.Take(3))
             {
