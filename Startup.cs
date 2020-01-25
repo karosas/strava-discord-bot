@@ -13,8 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using StravaDiscordBot.Services;
-using StravaDiscordBot.Services.Discord;
-using StravaDiscordBot.Services.Discord.Commands;
+using StravaDiscordBot.Services.Commands;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot
@@ -23,10 +22,9 @@ namespace StravaDiscordBot
     {
         private IConfiguration Configuration { get; set; }
         private DiscordSocketClient DiscordClient { get; set; }
-        private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IConfiguration config,IWebHostEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                .SetBasePath(env.ContentRootPath)
@@ -49,12 +47,16 @@ namespace StravaDiscordBot
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
+            services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
+            services.AddSingleton<IStravaApiClientService, StravaApiClientService>();
             services.AddSingleton<IStravaService, StravaService>();
+
+            services.AddSingleton<ICommandCoreService, CommandCoreService>();
             services.AddSingleton<ICommand, JoinLeaderboardCommand>();
             services.AddSingleton<ICommand, ShowLeaderboardCommand>();
             services.AddSingleton<IHelpCommand, HelpCommand>();
 
-            services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
+            services.AddHostedService<WeeklyLeaderboardHostedService>();
 
             services.AddControllers();
             services.AddMvc();
@@ -103,8 +105,6 @@ namespace StravaDiscordBot
             app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
             await DiscordClient.LoginAsync(TokenType.Bot, options.Discord.Token).ConfigureAwait(false);
             await DiscordClient.StartAsync().ConfigureAwait(false);
-
-            CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
         }
 
         private Task LogAsync(LogMessage log)

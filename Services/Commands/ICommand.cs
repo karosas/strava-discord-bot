@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 
-namespace StravaDiscordBot.Services.Discord.Commands
+namespace StravaDiscordBot.Services.Commands
 {
     public interface ICommand
     {

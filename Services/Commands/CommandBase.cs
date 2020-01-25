@@ -3,11 +3,10 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services.Discord.Commands
+namespace StravaDiscordBot.Services.Commands
 {
     public abstract class CommandBase : ICommand
     {

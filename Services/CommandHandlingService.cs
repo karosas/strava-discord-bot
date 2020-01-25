@@ -6,9 +6,9 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Services.Discord.Commands;
+using StravaDiscordBot.Services.Commands;
 
-namespace StravaDiscordBot.Services.Discord
+namespace StravaDiscordBot.Services
 {
     public class CommandHandlingService
     {

@@ -4,43 +4,66 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Services.Commands;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services.Discord.Commands
+namespace StravaDiscordBot.Services
 {
-    // TODO: Make more generic
-    public partial class ShowLeaderboardCommand : CommandBase
+    public interface ICommandCoreService
     {
-        private readonly IStravaService _stravaService;
-        private readonly ILogger<ShowLeaderboardCommand> _logger;
+        string GenerateHelpCommandContent(List<ICommand> commands);
+        Task<string> GenerateJoinCommandContent(ulong channelId, ulong userId, string username);
+        Task<List<Embed>> GenerateLeaderboardCommandContent(ulong channelId);
+    }
 
-        public ShowLeaderboardCommand(AppOptions options, BotDbContext context, ILogger<ShowLeaderboardCommand> logger, IStravaService stravaService) : base(options, context, logger)
+    public class CommandCoreService : ICommandCoreService
+    {
+        private readonly ILogger<CommandCoreService> _logger;
+        private readonly BotDbContext _context;
+        private readonly IStravaService _stravaService;
+
+        public CommandCoreService(ILogger<CommandCoreService> logger, BotDbContext context, IStravaService stravaService)
         {
-            _stravaService = stravaService;
             _logger = logger;
+            _context = context;
+            _stravaService = stravaService;
         }
 
-        public override string CommandName => "leaderboard";
-        public override string Descriptions => "Print current leaderboard";
-
-        public override async Task Execute(SocketUserMessage message, int argPos)
+        public string GenerateHelpCommandContent(List<ICommand> commands)
         {
-            if (!CanExecute(message, argPos))
-                throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `{CommandName}`");
+            var builder = new StringBuilder();
+            builder.AppendLine("This is a Discord Strava Leaderboard Bot.");
+            builder.AppendLine("Commands:");
+            foreach (var command in commands)
+            {
+                builder.AppendLine($"**{command.CommandName}** - {command.CommandName}");
+            }
+            return builder.ToString();
+        }
 
-            _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
+        public async Task<string> GenerateJoinCommandContent(ulong channelId, ulong userId, string username)
+        {
+            if (await _stravaService.DoesParticipantAlreadyExistsAsync(channelId.ToString(), userId.ToString()).ConfigureAwait(false))
+                throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
 
+            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(channelId.ToString(), userId.ToString())}"   ;
+        }
+
+        public async Task<List<Embed>> GenerateLeaderboardCommandContent(ulong channelId)
+        {
             var start = DateTime.Now.AddDays(-7);
-            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(message.Channel.Id.ToString(), start).ConfigureAwait(false);
+            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(channelId.ToString(), start).ConfigureAwait(false);
 
-            await message.Channel.SendMessageAsync(embed: BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide, start, DateTime.Now)).ConfigureAwait(false);
-            await message.Channel.SendMessageAsync(embed: BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide, start, DateTime.Now)).ConfigureAwait(false);
+            return new List<Embed>
+            {
+                BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide, start, DateTime.Now),
+                BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide, start, DateTime.Now)
+            };
         }
 
         private Embed BuildLeaderboardEmbedMessage(Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type, DateTime start, DateTime end)
@@ -50,9 +73,9 @@ namespace StravaDiscordBot.Services.Discord.Commands
                 .WithTitle($"'{type}' leaderboard for '{ start.ToString("yyyy MMMM dd")} - { end.ToString("yyyy MMMM dd")}'")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
-            
 
-            foreach(var challengeResult in categoryResult.ChallengeByChallengeResultDictionary)
+
+            foreach (var challengeResult in categoryResult.ChallengeByChallengeResultDictionary)
             {
                 embedBuilder.AddField(efb => efb.WithName("Category")
                                                 .WithValue($"{challengeResult.Key}")

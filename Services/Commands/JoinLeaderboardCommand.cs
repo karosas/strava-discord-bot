@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services.Discord.Commands
+namespace StravaDiscordBot.Services.Commands
 {
     public class JoinLeaderboardCommand : CommandBase
     {
-        private readonly IStravaService _stravaService;
         private readonly ILogger<JoinLeaderboardCommand> _logger;
+        private readonly ICommandCoreService _commandCoreService;
 
-        public JoinLeaderboardCommand(AppOptions options, BotDbContext context, ILogger<JoinLeaderboardCommand> logger, IStravaService stravaService) : base(options, context, logger)
+        public JoinLeaderboardCommand(AppOptions options, BotDbContext context, ILogger<JoinLeaderboardCommand> logger, ICommandCoreService commandCoreService) : base(options, context, logger)
         {
-            _stravaService = stravaService;
             _logger = logger;
+            _commandCoreService = commandCoreService;
         }
 
         public override string CommandName => "join";
@@ -26,13 +26,9 @@ namespace StravaDiscordBot.Services.Discord.Commands
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `{CommandName}`");
 
             _logger.LogInformation($"Executing 'Join' command. Full: {message.Content} | Author: {message.Author}");
-
-            if (await _stravaService.ParticipantAlreadyExistsAsync(message.Channel.Id.ToString(), message.Author.Id.ToString()).ConfigureAwait(false))
-                throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
-
             var dmChannel = await message.Author.GetOrCreateDMChannelAsync().ConfigureAwait(false);
             await dmChannel
-                .SendMessageAsync($"Hey, {message.Author.Mention} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(message.Channel.Id.ToString(), message.Author.Id.ToString())}")
+                .SendMessageAsync(await _commandCoreService.GenerateJoinCommandContent(message.Channel.Id, message.Author.Id, message.Author.Mention))
                 .ConfigureAwait(false);
         }
     }

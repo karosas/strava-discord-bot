@@ -7,16 +7,26 @@ namespace StravaDiscordBot.Exceptions
 {
     public class StravaException : Exception
     {
-        public StravaException(string message) : base(message) 
+        public StravaErrorType Error { get; }
+        public StravaException(StravaErrorType error, string message) : base(message) 
         {
+            Error = error;
         }
 
-        public StravaException()
+        public StravaException(StravaErrorType error)
         {
+            Error = error;
         }
 
-        public StravaException(string message, Exception innerException) : base(message, innerException)
+        public StravaException(StravaErrorType error, string message, Exception innerException) : base(message, innerException)
         {
+            Error = error;
+        }
+
+        public enum StravaErrorType
+        {
+            Unknown,
+            Unauthorized
         }
     }
 }
