@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.Discord.Commands
@@ -12,10 +13,12 @@ namespace StravaDiscordBot.Services.Discord.Commands
     {
         private AppOptions _options;
         private BotDbContext _context;
-        public CommandBase(AppOptions options, BotDbContext context)
+        private ILogger _logger;
+        public CommandBase(AppOptions options, BotDbContext context, ILogger logger)
         {
             _options = options;
             _context = context;
+            _logger = logger;
         }
 
         public abstract string CommandName { get; }
@@ -31,12 +34,16 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
         internal bool IsWrittenByAdmin(SocketMessage message)
         {
-            return _options.AdminDiscordIds.Contains(message.Author.Id);
+            var result = _options.AdminDiscordIds.Contains(message.Author.Id);
+            _logger.LogInformation($"Is message sent by admin - {result}");
+            return result;
         }
 
         internal bool IsWrittenInWhitelistedChannel(SocketUserMessage message)
         {
-            return _context.Participants.Any(x => x.ChannelId == message.Channel.Id.ToString());
+            var result = _context.Participants.Any(x => x.ChannelId == message.Channel.Id.ToString());
+            _logger.LogInformation($"Is message sent from whitelisted channel - {result}");
+            return result;
         }
 
         internal string GetCleanCommandText(SocketUserMessage message, int argPos)

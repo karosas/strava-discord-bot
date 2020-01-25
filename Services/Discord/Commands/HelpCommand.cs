@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.Discord.Commands
@@ -14,7 +15,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
     {
         private readonly IEnumerable<ICommand> _commands;
 
-        public HelpCommand(AppOptions options, BotDbContext context, IEnumerable<ICommand> commands) : base(options, context)
+        public HelpCommand(AppOptions options, BotDbContext context, ILogger<HelpCommand> logger, IEnumerable<ICommand> commands) : base(options, context, logger)
         {
             _commands = commands;
         }

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
 using StravaDiscordBot.Storage;
@@ -18,7 +20,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
         private readonly IStravaService _stravaService;
         private readonly ILogger<ShowLeaderboardCommand> _logger;
 
-        public ShowLeaderboardCommand(AppOptions options, BotDbContext context, IStravaService stravaService, ILogger<ShowLeaderboardCommand> logger) : base(options, context)
+        public ShowLeaderboardCommand(AppOptions options, BotDbContext context, ILogger<ShowLeaderboardCommand> logger, IStravaService stravaService) : base(options, context, logger)
         {
             _stravaService = stravaService;
             _logger = logger;
@@ -27,10 +29,6 @@ namespace StravaDiscordBot.Services.Discord.Commands
         public override string CommandName => "leaderboard";
         public override string Descriptions => "Print current leaderboard";
 
-        private bool _silent = false;
-        private const string VIRTUAL_RIDE_NAME = "VirtualRide";
-        private const string REAL_RIDE_NAME = "Ride";
-
         public override async Task Execute(SocketUserMessage message, int argPos)
         {
             if (!CanExecute(message, argPos))
@@ -38,61 +36,37 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
             _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
 
-            _silent = GetCleanCommandText(message, argPos).Contains("silent");
             var start = DateTime.Now.AddDays(-7);
             var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(message.Channel.Id.ToString(), start).ConfigureAwait(false);
-            var leaderboardHeadline = $"Leaderboard from  {start.ToString("yyyy MMMM dd")} to {DateTime.Now.ToString("yyyy MMMM dd")}\n";
-            var leaderboardMessage = FormatActivitiesIntoLeaderboardMessage(groupedActivitiesByParticipant);
 
-            await message.Channel.SendMessageAsync($"{leaderboardHeadline}\n{leaderboardMessage}").ConfigureAwait(false);
-        }
-        private string FormatActivitiesIntoLeaderboardMessage(Dictionary<LeaderboardParticipant, List<DetailedActivity>> activities) 
-        {
-            var builder = new StringBuilder();
-
-            builder.AppendLine(FormatActivitiesForType(activities, REAL_RIDE_NAME));
-            builder.AppendLine();
-            builder.AppendLine(FormatActivitiesForType(activities, VIRTUAL_RIDE_NAME));
-
-            return builder.ToString();
+            await message.Channel.SendMessageAsync(embed: BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide, start, DateTime.Now)).ConfigureAwait(false);
+            await message.Channel.SendMessageAsync(embed: BuildLeaderboardEmbedMessage(groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide, start, DateTime.Now)).ConfigureAwait(false);
         }
 
-        private string FormatActivitiesForType(Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict, string type)
+        private Embed BuildLeaderboardEmbedMessage(Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type, DateTime start, DateTime end)
         {
-            var categoryResult = GetTopResultsForCategory(participantActivitiesDict, x => x.Type == type);
-            var builder = new StringBuilder();
+            var categoryResult = GetTopResultsForCategory(groupedActivitiesByParticipant, x => x.Type == type);
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle($"'{type}' leaderboard for '{ start.ToString("yyyy MMMM dd")} - { end.ToString("yyyy MMMM dd")}'")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Green);
+            
 
-            builder.AppendLine($"**'{type}' category results**:");
-            builder.AppendLine();
-
-            builder.AppendLine("*Distance*\n");
-            var index = 0;
-            foreach(var distanceResult in categoryResult.Distance.Take(3)) {
-                builder.AppendLine(GetParticipantPlaceString(index + 1, distanceResult.Participant.GetDiscordMention(_silent), distanceResult.Value / 1000, "km"));
-            }
-            builder.AppendLine();
-
-            builder.AppendLine("*Altitude*\n");
-            index = 0;
-            foreach (var altitudeResult in categoryResult.Altitude.Take(3))
+            foreach(var challengeResult in categoryResult.ChallengeByChallengeResultDictionary)
             {
-                builder.AppendLine(GetParticipantPlaceString(index + 1, altitudeResult.Participant.GetDiscordMention(_silent), altitudeResult.Value, "m"));
+                embedBuilder.AddField(efb => efb.WithName("Category")
+                                                .WithValue($"{challengeResult.Key}")
+                                                .WithIsInline(false));
+                var place = 1;
+                foreach (var participantResult in challengeResult.Value.Take(3))
+                {
+                    embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
+                                                    .WithName($"{OutputFormatters.PlaceToEmote(place)} - {OutputFormatters.ParticipantResultForChallenge(challengeResult.Key, participantResult.Value)}")
+                                                    .WithIsInline(true));
+                    place++;
+                }
             }
-            builder.AppendLine();
-
-            builder.AppendLine("*Highest weighted power ride* (only rides longer than 20 minutes are considered)\n");
-            index = 0;
-            foreach (var powerResult in categoryResult.Power.Take(3))
-            {
-                builder.AppendLine(GetParticipantPlaceString(index + 1, powerResult.Participant.GetDiscordMention(_silent), powerResult.Value, "W"));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string GetParticipantPlaceString(int index, string participant, double value, string unit)
-        {
-            return $"{index}. {participant} @ {(value):n1} {unit}";
+            return embedBuilder.Build();
         }
 
         private CategoryResult GetTopResultsForCategory(Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict, Func<DetailedActivity, bool> activityFilter)
@@ -115,9 +89,12 @@ namespace StravaDiscordBot.Services.Discord.Commands
 
             return new CategoryResult
             {
-                Distance = distanceResult.OrderByDescending(x => x.Value).ToList(),
-                Altitude = altitudeResult.OrderByDescending(x => x.Value).ToList(),
-                Power = powerResult.OrderByDescending(x => x.Value).ToList()
+                ChallengeByChallengeResultDictionary = new Dictionary<string, List<ParticipantResult>>
+                {
+                    { Constants.ChallengeType.Distance,  distanceResult.OrderByDescending(x => x.Value).ToList() },
+                    { Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).ToList() },
+                    { Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).ToList() }
+                }
             };
         }
     }

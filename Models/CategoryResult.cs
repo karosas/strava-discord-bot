@@ -4,8 +4,6 @@ namespace StravaDiscordBot.Models
 {
     public class CategoryResult
     {
-        public List<ParticipantResult> Distance { get; set; }
-        public List<ParticipantResult> Altitude { get; set; }
-        public List<ParticipantResult> Power { get; set; }
+        public Dictionary<string, List<ParticipantResult>> ChallengeByChallengeResultDictionary { get; set; }
     }
 }

@@ -11,7 +11,7 @@ namespace StravaDiscordBot.Services.Discord.Commands
         private readonly IStravaService _stravaService;
         private readonly ILogger<JoinLeaderboardCommand> _logger;
 
-        public JoinLeaderboardCommand(AppOptions options, BotDbContext context, IStravaService stravaService, ILogger<JoinLeaderboardCommand> logger) : base(options, context)
+        public JoinLeaderboardCommand(AppOptions options, BotDbContext context, ILogger<JoinLeaderboardCommand> logger, IStravaService stravaService) : base(options, context, logger)
         {
             _stravaService = stravaService;
             _logger = logger;
