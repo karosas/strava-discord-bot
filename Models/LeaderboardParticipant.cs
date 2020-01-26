@@ -12,18 +12,18 @@ namespace StravaDiscordBot.Models
     {
         [Key]
         public string DiscordUserId { get; set; }
-        public string ChannelId { get; set; }
+        public string ServerId { get; set; }
         public string StravaAccessToken { get; set; }
         public string StravaRefreshToken { get; set; }
         public string GetDiscordMention(bool silent = false) => silent ? $"`<@{DiscordUserId}>`" : $"<@{DiscordUserId}>";
 
         public LeaderboardParticipant() {}
-        public LeaderboardParticipant(string channelId, string userId, string stravaAccessToken, string stravaRefreshToken)
+        public LeaderboardParticipant(string serverId, string userId, string stravaAccessToken, string stravaRefreshToken)
         {
-            ChannelId = channelId;
             DiscordUserId = userId;
             StravaAccessToken = stravaAccessToken;
             StravaRefreshToken = stravaRefreshToken;
+            ServerId = serverId;
         }
 
         public void UpdateWithNewTokens(StravaCodeExchangeResult result)

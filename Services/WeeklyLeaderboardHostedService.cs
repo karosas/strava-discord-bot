@@ -29,20 +29,15 @@ namespace StravaDiscordBot.Services
         public override async Task DoWork(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Executing leaderboard hosted service");
-            foreach(var channelId in GetAllLeaderboardChannels())
+            foreach(var leaderboard in _context.Leaderboards)
             {
-                var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(channelId).ConfigureAwait(false);
-                var channel = _discordSocketClient.GetChannel(channelId) as SocketTextChannel;
+                var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(ulong.Parse(leaderboard.ServerId)).ConfigureAwait(false);
+                var channel = _discordSocketClient.GetChannel(ulong.Parse(leaderboard.ChannelId)) as SocketTextChannel;
                 foreach(var embed in embeds)
                 {
                     await channel.SendMessageAsync(embed: embed);
                 }
             }
-        }
-
-        private List<ulong> GetAllLeaderboardChannels()
-        {
-            return _context.Participants.Select(x => ulong.Parse(x.ChannelId)).Distinct().ToList();
         }
     }
 }

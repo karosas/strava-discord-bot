@@ -19,12 +19,12 @@ namespace StravaDiscordBot.Services
 {
     public interface IStravaService
     {
-        string GetOAuthUrl(string channelId, string discordUserId);
-        Task<bool> DoesParticipantAlreadyExistsAsync(string channelId, string discordUserId);
-        Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId);
-        Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string channelId, DateTime start);
+        string GetOAuthUrl(string serverId, string channelId, string discordUserId);
+        Task<bool> DoesParticipantAlreadyExistsAsync(string serverId, string discordUserId);
+        Task<List<LeaderboardParticipant>> GetAllParticipantsForServerAsync(string serverId);
+        Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string serverId, DateTime start);
         Task<LeaderboardParticipant> RefreshAccessTokenAsync(LeaderboardParticipant participant);
-        Task ExchangeCodeAndCreateParticipant(string channelId, string discordUserId, string code);
+        Task ExchangeCodeAndCreateParticipant(string serverId, string discordUserId, string code);
     }
 
     public class StravaService : IStravaService
@@ -42,18 +42,18 @@ namespace StravaDiscordBot.Services
             _stravaApiService = stravaApiService;
         }
 
-        public async Task<List<LeaderboardParticipant>> GetAllParticipantsForChannelAsync(string channelId)
+        public async Task<List<LeaderboardParticipant>> GetAllParticipantsForServerAsync(string serverId)
         {
-            _logger.LogInformation($"Fetching all participants within channel {channelId}");
+            _logger.LogInformation($"Fetching all participants within server {serverId}");
             var participants = await _dbContext.Participants.ToListAsync().ConfigureAwait(false);
-            return participants.Where(x => x.ChannelId == channelId).ToList();
+            return participants.Where(x => x.ServerId == serverId).ToList();
         }
 
-        public async Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string channelId, DateTime after)
+        public async Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string serverId, DateTime after)
         {
-            _logger.LogInformation($"Fetching all activities within channel {channelId}");
+            _logger.LogInformation($"Fetching all activities within server {serverId}");
             var result = new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
-            var participants = await GetAllParticipantsForChannelAsync(channelId).ConfigureAwait(false);
+            var participants = await GetAllParticipantsForServerAsync(serverId).ConfigureAwait(false);
             _logger.LogInformation($"Found {participants?.Count} participants wtihing channels leaderboard");
             foreach (var participant in participants)
             {
@@ -76,24 +76,24 @@ namespace StravaDiscordBot.Services
             return result;
         }
 
-        public string GetOAuthUrl(string channelId, string discordUserId)
+        public string GetOAuthUrl(string serverId, string channelId, string discordUserId)
         {
             return QueryHelpers.AddQueryString("http://www.strava.com/oauth/authorize",
                 new Dictionary<string, string>
                 {
                     { "client_id", _options.Strava.ClientId },
                     { "response_type", "code" },
-                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{channelId}/{discordUserId}" },
+                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{serverId}/{channelId}/{discordUserId}" },
                     { "approval_prompt", "force" },
                     { "scope", "read,activity:read" }
                 });
         }
 
-        public async Task<bool> DoesParticipantAlreadyExistsAsync(string channelId, string discordUserId)
+        public async Task<bool> DoesParticipantAlreadyExistsAsync(string serverId, string discordUserId)
         {
             try
             {
-                var participants = await GetAllParticipantsForChannelAsync(channelId).ConfigureAwait(false);
+                var participants = await GetAllParticipantsForServerAsync(serverId).ConfigureAwait(false);
                 return participants.FirstOrDefault(x => x.DiscordUserId == discordUserId) != null;
             }
             catch (Exception e)
@@ -115,10 +115,10 @@ namespace StravaDiscordBot.Services
             return participant;
         }
 
-        public async Task ExchangeCodeAndCreateParticipant(string channelId, string discordUserId, string code)
+        public async Task ExchangeCodeAndCreateParticipant(string serverId, string discordUserId, string code)
         {
             var exchangeResult = await _stravaApiService.ExchangeCodeAsync(code).ConfigureAwait(false);
-            var leaderboardParticipant = new LeaderboardParticipant(channelId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken);
+            var leaderboardParticipant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken);
             await _dbContext.Participants.AddAsync(leaderboardParticipant);
             await _dbContext.SaveChangesAsync().ConfigureAwait(false);
         }

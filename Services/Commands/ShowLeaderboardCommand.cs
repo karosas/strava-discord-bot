@@ -32,8 +32,8 @@ namespace StravaDiscordBot.Services.Commands
         {
             return GetCleanCommandText(message, argPos)
                 .StartsWith(CommandName, StringComparison.InvariantCultureIgnoreCase)
-                && IsWrittenByAdmin(message) 
-                && IsWrittenInWhitelistedChannel(message);
+                && IsWrittenByAdmin(message)
+                && IsWrittenInWhitelistedServer(message);
         }
 
         public override async Task Execute(SocketUserMessage message, int argPos)
@@ -42,12 +42,19 @@ namespace StravaDiscordBot.Services.Commands
                 throw new InvalidCommandArgumentException($"Whoops, this seems wrong, the command should be in format of `{CommandName}`");
 
             _logger.LogInformation($"Executing 'leaderboard' command. Full: {message.Content} | Author: {message.Author}");
-
-            var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(message.Channel.Id);
-            foreach(var embed in embeds)
+            if (TryCastChannelToServerChannel(message, out var serverChannel))
             {
-                await message.Channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
+                var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(serverChannel.Guild.Id);
+                foreach (var embed in embeds)
+                {
+                    await message.Channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
+                }
             }
+            else
+            {
+                message.Channel.SendMessageAsync("This doesn't seem like a channel within a server. Try joining the leaderboard from channel inside a server where this bot is set up.");
+            }
+            
         }
     }
 }

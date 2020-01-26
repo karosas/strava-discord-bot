@@ -10,8 +10,8 @@ namespace StravaDiscordBot.Services.Commands
 {
     public abstract class CommandBase : ICommand
     {
-        private AppOptions _options;
-        private BotDbContext _context;
+        internal AppOptions _options;
+        internal BotDbContext _context;
         private ILogger _logger;
         public CommandBase(AppOptions options, BotDbContext context, ILogger logger)
         {
@@ -24,11 +24,12 @@ namespace StravaDiscordBot.Services.Commands
         public abstract string Descriptions { get; }
 
         // Default logic to validate whether the message is executable by this command
-        public bool CanExecute(SocketUserMessage message, int argPos)
+        public virtual bool CanExecute(SocketUserMessage message, int argPos)
         {
             return GetCleanCommandText(message, argPos)
                 .StartsWith(CommandName, StringComparison.InvariantCultureIgnoreCase)
-                && (IsWrittenByAdmin(message) || IsWrittenInWhitelistedChannel(message));
+                && IsWrittenByAdmin(message)
+                && IsWrittenInWhitelistedServer(message);
         }
 
         internal bool IsWrittenByAdmin(SocketMessage message)
@@ -38,11 +39,27 @@ namespace StravaDiscordBot.Services.Commands
             return result;
         }
 
-        internal bool IsWrittenInWhitelistedChannel(SocketUserMessage message)
+        internal bool IsWrittenInWhitelistedServer(SocketUserMessage message)
         {
-            var result = _context.Participants.Any(x => x.ChannelId == message.Channel.Id.ToString());
-            _logger.LogInformation($"Is message sent from whitelisted channel - {result}");
-            return result;
+            if(TryCastChannelToServerChannel(message, out var serverChannel))
+            {
+                var result = _context.Leaderboards.Any(x => x.ServerId == serverChannel.Guild.Id.ToString());
+                _logger.LogInformation($"Is message sent from whitelisted server - {result}");
+                return result;
+            }
+            return false;
+        }
+
+        internal bool TryCastChannelToServerChannel(SocketUserMessage message, out SocketGuildChannel serverChannel)
+        {
+            if (message.Channel is SocketGuildChannel channel)
+            {
+                serverChannel = channel;
+                return true;
+            }
+
+            serverChannel = null;
+            return false;
         }
 
         internal string GetCleanCommandText(SocketUserMessage message, int argPos)

@@ -17,8 +17,8 @@ namespace StravaDiscordBot.Services
     public interface ICommandCoreService
     {
         string GenerateHelpCommandContent(List<ICommand> commands);
-        Task<string> GenerateJoinCommandContent(ulong channelId, ulong userId, string username);
-        Task<List<Embed>> GenerateLeaderboardCommandContent(ulong channelId);
+        Task<string> GenerateJoinCommandContent(ulong serverId, ulong channelId, ulong userId, string username);
+        Task<List<Embed>> GenerateLeaderboardCommandContent(ulong serverId);
     }
 
     public class CommandCoreService : ICommandCoreService
@@ -46,18 +46,18 @@ namespace StravaDiscordBot.Services
             return builder.ToString();
         }
 
-        public async Task<string> GenerateJoinCommandContent(ulong channelId, ulong userId, string username)
+        public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong channelId, ulong userId, string username)
         {
-            if (await _stravaService.DoesParticipantAlreadyExistsAsync(channelId.ToString(), userId.ToString()).ConfigureAwait(false))
+            if (await _stravaService.DoesParticipantAlreadyExistsAsync(serverId.ToString(), userId.ToString()).ConfigureAwait(false))
                 throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
 
-            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(channelId.ToString(), userId.ToString())}"   ;
+            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), channelId.ToString(), userId.ToString())}"   ;
         }
 
-        public async Task<List<Embed>> GenerateLeaderboardCommandContent(ulong channelId)
+        public async Task<List<Embed>> GenerateLeaderboardCommandContent(ulong serverId)
         {
             var start = DateTime.Now.AddDays(-7);
-            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(channelId.ToString(), start).ConfigureAwait(false);
+            var groupedActivitiesByParticipant = await _stravaService.GetActivitiesSinceStartDate(serverId.ToString(), start).ConfigureAwait(false);
 
             return new List<Embed>
             {

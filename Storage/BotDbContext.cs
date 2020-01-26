@@ -11,6 +11,7 @@ namespace StravaDiscordBot.Storage
             _options = options;
         }
         public DbSet<LeaderboardParticipant> Participants { get; set; }
+        public DbSet<Leaderboard> Leaderboards { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options.UseSqlite(_options.ConnectionString);
