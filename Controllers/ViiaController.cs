@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Services;
+using StravaDiscordBot.Discord;
 using HttpGetAttribute = Microsoft.AspNetCore.Mvc.HttpGetAttribute;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
@@ -18,14 +18,14 @@ namespace StravaDiscordBot.Controllers
             _stravaService = stravaService;
         }
 
-        [HttpGet("callback/{serverId}/{channelId}/{discordUserId}")]
+        [HttpGet("callback/{serverId}/{discordUserId}")]
         public async Task<IActionResult> StravaCallback(string serverId, string discordUserId, [FromQuery(Name = "code")] string code, [FromQuery(Name = "scope")] string scope)
         {
             if(scope == null || !scope.Contains("activity:read", StringComparison.InvariantCultureIgnoreCase))
                 return Ok("Failed to authorize user, read activities permission is needed");
 
             if(await _stravaService.DoesParticipantAlreadyExistsAsync(serverId, discordUserId).ConfigureAwait(false))
-                return Ok("It seems this discord user for this channel has already connected to Strava");
+                return Ok("It seems this discord user for this server has already connected to Strava");
 
             try
             {

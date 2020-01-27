@@ -12,7 +12,7 @@ using Newtonsoft.Json.Linq;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models.Strava;
 
-namespace StravaDiscordBot.Services
+namespace StravaDiscordBot.Discord
 {
     public interface IStravaApiClientService
     {

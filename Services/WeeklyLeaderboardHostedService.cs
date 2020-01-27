@@ -7,7 +7,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services
+namespace StravaDiscordBot.Discord
 {
     public class WeeklyLeaderboardHostedService : CronHostedServiceBase
     {

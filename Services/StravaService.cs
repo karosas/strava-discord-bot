@@ -15,11 +15,11 @@ using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services
+namespace StravaDiscordBot.Discord
 {
     public interface IStravaService
     {
-        string GetOAuthUrl(string serverId, string channelId, string discordUserId);
+        string GetOAuthUrl(string serverId, string discordUserId);
         Task<bool> DoesParticipantAlreadyExistsAsync(string serverId, string discordUserId);
         Task<List<LeaderboardParticipant>> GetAllParticipantsForServerAsync(string serverId);
         Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string serverId, DateTime start);
@@ -76,14 +76,14 @@ namespace StravaDiscordBot.Services
             return result;
         }
 
-        public string GetOAuthUrl(string serverId, string channelId, string discordUserId)
+        public string GetOAuthUrl(string serverId, string discordUserId)
         {
             return QueryHelpers.AddQueryString("http://www.strava.com/oauth/authorize",
                 new Dictionary<string, string>
                 {
                     { "client_id", _options.Strava.ClientId },
                     { "response_type", "code" },
-                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{serverId}/{channelId}/{discordUserId}" },
+                    { "redirect_uri", $"{_options.BaseUrl}/strava/callback/{serverId}/{discordUserId}" },
                     { "approval_prompt", "force" },
                     { "scope", "read,activity:read" }
                 });

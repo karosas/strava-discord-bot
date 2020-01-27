@@ -9,16 +9,15 @@ using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
-using StravaDiscordBot.Services.Commands;
 using StravaDiscordBot.Storage;
 
-namespace StravaDiscordBot.Services
+namespace StravaDiscordBot.Discord
 {
     public interface ICommandCoreService
     {
-        string GenerateHelpCommandContent(List<ICommand> commands);
-        Task<string> GenerateJoinCommandContent(ulong serverId, ulong channelId, ulong userId, string username);
+        Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username);
         Task<List<Embed>> GenerateLeaderboardCommandContent(ulong serverId);
+        Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId);
     }
 
     public class CommandCoreService : ICommandCoreService
@@ -34,24 +33,23 @@ namespace StravaDiscordBot.Services
             _stravaService = stravaService;
         }
 
-        public string GenerateHelpCommandContent(List<ICommand> commands)
+        public async Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine("This is a Discord Strava Leaderboard Bot.");
-            builder.AppendLine("Commands:");
-            foreach (var command in commands)
-            {
-                builder.AppendLine($"**{command.CommandName}** - {command.Description}");
-            }
-            return builder.ToString();
+            if(_context.Leaderboards.Any(x => x.ServerId == serverId.ToString())) 
+                return "Seems like a leaderboard is already setup on this server";
+
+            var leaderboard = new Leaderboard { ServerId = serverId.ToString(), ChannelId = channelId.ToString() };
+            _context.Leaderboards.Add(leaderboard);
+            await _context.SaveChangesAsync();
+            return "Initialized leaderboard for this server. Users can join by using `join` command.";
         }
 
-        public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong channelId, ulong userId, string username)
+        public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
             if (await _stravaService.DoesParticipantAlreadyExistsAsync(serverId.ToString(), userId.ToString()).ConfigureAwait(false))
                 throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
 
-            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), channelId.ToString(), userId.ToString())}";
+            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
         }
 
         public async Task<List<Embed>> GenerateLeaderboardCommandContent(ulong serverId)

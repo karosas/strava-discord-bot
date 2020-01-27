@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Cronos;
 using Microsoft.Extensions.Hosting;
 
-namespace StravaDiscordBot.Services
+namespace StravaDiscordBot.Discord
 {
     public abstract class CronHostedServiceBase : IHostedService, IDisposable
     {

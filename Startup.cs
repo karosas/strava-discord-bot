@@ -12,8 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using StravaDiscordBot.Services;
-using StravaDiscordBot.Services.Commands;
+using StravaDiscordBot.Discord;
+using StravaDiscordBot.Discord.Modules;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot
@@ -48,15 +48,14 @@ namespace StravaDiscordBot
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
+            services.AddSingleton<PublicModule>();
+            services.AddSingleton<AdminModule>();
+
             services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
             services.AddSingleton<IStravaApiClientService, StravaApiClientService>();
             services.AddSingleton<IStravaService, StravaService>();
 
             services.AddSingleton<ICommandCoreService, CommandCoreService>();
-            services.AddSingleton<ICommand, JoinLeaderboardCommand>();
-            services.AddSingleton<ICommand, ShowLeaderboardCommand>();
-            services.AddSingleton<ICommand, InitializeCommand>();
-            services.AddSingleton<IHelpCommand, HelpCommand>();
 
             services.AddHostedService<WeeklyLeaderboardHostedService>();
 
@@ -109,6 +108,7 @@ namespace StravaDiscordBot
             await DiscordClient.StartAsync().ConfigureAwait(false);
 
             CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
+            await CommandHandlingService.InstallCommandsAsync();
         }
 
         private Task LogAsync(LogMessage log)
