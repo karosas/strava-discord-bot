@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
@@ -20,7 +15,8 @@ namespace StravaDiscordBot.Discord
     public interface IStravaService
     {
         string GetOAuthUrl(string serverId, string discordUserId);
-        Task<bool> DoesParticipantAlreadyExistsAsync(string serverId, string discordUserId);
+        Task<bool> CanNewParticipantBeCreated(string serverId, string discordUserId);
+        
         Task<List<LeaderboardParticipant>> GetAllParticipantsForServerAsync(string serverId);
         Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string serverId, DateTime start);
         Task<LeaderboardParticipant> RefreshAccessTokenAsync(LeaderboardParticipant participant);
@@ -60,7 +56,7 @@ namespace StravaDiscordBot.Discord
                 var participantActivities = new List<DetailedActivity>();
                 try
                 {
-                    participantActivities = await _stravaApiService.FetchActivities(participant.StravaAccessToken, participant.StravaRefreshToken, after)
+                    participantActivities = await _stravaApiService.FetchActivities(participant.StravaAccessToken, after)
                         .ConfigureAwait(false);
                 }
                 catch (StravaException e) when (e.Error == StravaException.StravaErrorType.Unauthorized)
@@ -68,7 +64,7 @@ namespace StravaDiscordBot.Discord
                     await RefreshAccessTokenAsync(participant)
                         .ConfigureAwait(false);
 
-                    participantActivities = await _stravaApiService.FetchActivities(participant.StravaAccessToken, participant.StravaRefreshToken, after)
+                    participantActivities = await _stravaApiService.FetchActivities(participant.StravaAccessToken,  after)
                        .ConfigureAwait(false);
                 }
                 result.Add(participant, participantActivities);
@@ -89,7 +85,7 @@ namespace StravaDiscordBot.Discord
                 });
         }
 
-        public async Task<bool> DoesParticipantAlreadyExistsAsync(string serverId, string discordUserId)
+        public async Task<bool> CanNewParticipantBeCreated(string serverId, string discordUserId)
         {
             try
             {
@@ -106,10 +102,10 @@ namespace StravaDiscordBot.Discord
 
         public async Task<LeaderboardParticipant> RefreshAccessTokenAsync(LeaderboardParticipant participant)
         {
-            (string updatedAccessToken, string updatedRefreshToken) = await _stravaApiService.RefreshAccessTokenAsync(participant.StravaRefreshToken).ConfigureAwait(false);
+            var authResponse = await _stravaApiService.RefreshAccessTokenAsync(participant.StravaRefreshToken).ConfigureAwait(false);
 
-            participant.StravaAccessToken = updatedAccessToken;
-            participant.StravaRefreshToken = updatedRefreshToken;
+            participant.StravaAccessToken = authResponse.AccessToken;
+            participant.StravaRefreshToken = authResponse.AccessToken;
             _dbContext.Participants.Update(participant);
 
             return participant;
@@ -118,7 +114,12 @@ namespace StravaDiscordBot.Discord
         public async Task ExchangeCodeAndCreateParticipant(string serverId, string discordUserId, string code)
         {
             var exchangeResult = await _stravaApiService.ExchangeCodeAsync(code).ConfigureAwait(false);
-            var leaderboardParticipant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken);
+            var athlete = await _stravaApiService.GetAthlete(exchangeResult.AccessToken);
+            if(_dbContext.Participants.Any(x => x.ServerId == serverId && x.StravaId == athlete.Id.ToString()))
+                throw new InvalidCommandArgumentException("This Strava athlete is already participating in this server's leaderboard.");
+
+
+            var leaderboardParticipant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken, athlete.Id.ToString(), athlete.Firstname);
             await _dbContext.Participants.AddAsync(leaderboardParticipant);
             await _dbContext.SaveChangesAsync().ConfigureAwait(false);
         }

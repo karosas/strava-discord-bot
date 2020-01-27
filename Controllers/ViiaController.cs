@@ -24,7 +24,7 @@ namespace StravaDiscordBot.Controllers
             if(scope == null || !scope.Contains("activity:read", StringComparison.InvariantCultureIgnoreCase))
                 return Ok("Failed to authorize user, read activities permission is needed");
 
-            if(await _stravaService.DoesParticipantAlreadyExistsAsync(serverId, discordUserId).ConfigureAwait(false))
+            if(await _stravaService.CanNewParticipantBeCreated(serverId, discordUserId).ConfigureAwait(false))
                 return Ok("It seems this discord user for this server has already connected to Strava");
 
             try
@@ -35,6 +35,10 @@ namespace StravaDiscordBot.Controllers
             catch (StravaException e)
             {
                 return Ok($"Failed to authorize with Strava, error message: {e.Message}");
+            }
+            catch(InvalidCommandArgumentException e)
+            {
+                return Ok(e.Message);
             }
         }
     }

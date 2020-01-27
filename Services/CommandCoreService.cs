@@ -46,7 +46,7 @@ namespace StravaDiscordBot.Discord
 
         public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
-            if (await _stravaService.DoesParticipantAlreadyExistsAsync(serverId.ToString(), userId.ToString()).ConfigureAwait(false))
+            if (await _stravaService.CanNewParticipantBeCreated(serverId.ToString(), userId.ToString()).ConfigureAwait(false))
                 throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
 
             return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
