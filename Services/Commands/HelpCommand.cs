@@ -22,9 +22,16 @@ namespace StravaDiscordBot.Services.Commands
             _commandCoreService = commandCoreService;
         }
 
+        public override bool CanExecute(SocketUserMessage message, int argPos)
+        {
+            return GetCleanCommandText(message, argPos)
+                .StartsWith(CommandName, StringComparison.InvariantCultureIgnoreCase)
+                && IsWrittenInWhitelistedServer(message);
+        }
+
         public override string CommandName => "help";
 
-        public override string Descriptions => "Show help including available commands";
+        public override string Description => "Show help including available commands";
 
         public override async Task Execute(SocketUserMessage message, int argPos)
         {

@@ -41,7 +41,7 @@ namespace StravaDiscordBot.Services
             builder.AppendLine("Commands:");
             foreach (var command in commands)
             {
-                builder.AppendLine($"**{command.CommandName}** - {command.CommandName}");
+                builder.AppendLine($"**{command.CommandName}** - {command.Description}");
             }
             return builder.ToString();
         }
@@ -51,7 +51,7 @@ namespace StravaDiscordBot.Services
             if (await _stravaService.DoesParticipantAlreadyExistsAsync(serverId.ToString(), userId.ToString()).ConfigureAwait(false))
                 throw new InvalidCommandArgumentException("Whoops, it seems like you're already participating in the leaderboard");
 
-            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), channelId.ToString(), userId.ToString())}"   ;
+            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), channelId.ToString(), userId.ToString())}";
         }
 
         public async Task<List<Embed>> GenerateLeaderboardCommandContent(ulong serverId)

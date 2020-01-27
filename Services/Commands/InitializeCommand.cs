@@ -21,7 +21,7 @@ namespace StravaDiscordBot.Services.Commands
         }
 
         public override string CommandName => "init";
-        public override string Descriptions => "Initialize leaderboard for this server in this channel.";
+        public override string Description => "[Admin] Initialize leaderboard for this server in this channel.";
 
         public override bool CanExecute(SocketUserMessage message, int argPos)
         {

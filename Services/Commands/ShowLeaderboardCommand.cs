@@ -26,7 +26,7 @@ namespace StravaDiscordBot.Services.Commands
         }
 
         public override string CommandName => "leaderboard";
-        public override string Descriptions => "Print current leaderboard";
+        public override string Description => "[Admin] Print current leaderboard";
 
         public bool CanExecute(SocketUserMessage message, int argPos)
         {

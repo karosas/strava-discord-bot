@@ -21,7 +21,7 @@ namespace StravaDiscordBot.Services.Commands
         }
 
         public abstract string CommandName { get; }
-        public abstract string Descriptions { get; }
+        public abstract string Description { get; }
 
         // Default logic to validate whether the message is executable by this command
         public virtual bool CanExecute(SocketUserMessage message, int argPos)

@@ -19,7 +19,7 @@ namespace StravaDiscordBot.Services.Commands
         }
 
         public override string CommandName => "join";
-        public override string Descriptions => "Join the leaderboard.";
+        public override string Description => "Join the leaderboard.";
 
         public override bool CanExecute(SocketUserMessage message, int argPos)
         {
