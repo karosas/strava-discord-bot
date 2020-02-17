@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Serilog;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Discord.Modules;
 using StravaDiscordBot.Storage;
@@ -25,23 +26,16 @@ namespace StravaDiscordBot
         private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IWebHostEnvironment env)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
-               .SetBasePath(env.ContentRootPath)
-               .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-               .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-               .AddEnvironmentVariables("ASPNETCORE_")
-               .AddUserSecrets("strava-discord-bot-13mdf4j3-23jnejkn");
-
-            Configuration = builder.Build();
+            Configuration = configuration;
         }
         public void ConfigureServices(IServiceCollection services)
         {
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
             services.AddSingleton(appOptions);
-            services.AddLogging();
+            services.AddLogging(builder => builder.AddSerilog(dispose: true));
 
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
@@ -91,10 +85,10 @@ namespace StravaDiscordBot
                 var db = dbContext.Database.EnsureCreated();
             }
 
-            StartDiscordBot(app)
+            /*StartDiscordBot(app)
                 .ConfigureAwait(false)
                 .GetAwaiter()
-                .GetResult();
+                .GetResult();*/
         }
 
         private async Task StartDiscordBot(IApplicationBuilder app)

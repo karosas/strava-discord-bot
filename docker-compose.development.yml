@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  bot:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - USER_SECRETS_ID=strava-discord-bot-13mdf4j3-23jnejkn
+    volumes:
+      - $APPDATA/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
