@@ -24,12 +24,9 @@ namespace StravaDiscordBot.Controllers
             if(scope == null || !scope.Contains("activity:read", StringComparison.InvariantCultureIgnoreCase))
                 return Ok("Failed to authorize user, read activities permission is needed");
 
-            if(await _stravaService.CanNewParticipantBeCreated(serverId, discordUserId).ConfigureAwait(false))
-                return Ok("It seems this discord user for this server has already connected to Strava");
-
             try
             {
-                await _stravaService.ExchangeCodeAndCreateParticipant(serverId, discordUserId, code).ConfigureAwait(false);
+                await _stravaService.ExchangeCodeAndCreateOrRefreshParticipant(serverId, discordUserId, code).ConfigureAwait(false);
                 return Ok("You are now part of the leaderboard");
             }
             catch (StravaException e)

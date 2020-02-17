@@ -27,6 +27,7 @@ namespace StravaDiscordBot.Helpers
             switch (challenge)
             {
                 case Constants.ChallengeType.Distance:
+                case Constants.ChallengeType.DistanceRide:
                     return $"{value:n1} km";
                 case Constants.ChallengeType.Elevation:
                     return $"{value:n0} m";

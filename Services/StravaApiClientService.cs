@@ -74,6 +74,7 @@ namespace StravaDiscordBot.Discord
                 http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var response = await http.GetAsync(urlSuffix).ConfigureAwait(false);
+                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -81,10 +82,10 @@ namespace StravaDiscordBot.Discord
                         throw new StravaException(StravaException.StravaErrorType.Unauthorized, $"Access token expired");
 
                     _logger.LogError($"Failed call to strava - {response.StatusCode}");
+                    _logger.LogError(responseContent);
                     throw new StravaException(StravaException.StravaErrorType.Unknown, $"Failed to get from strava, status code: {response.StatusCode}");
                 }
 
-                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 return JsonConvert.DeserializeObject<T>(responseContent);
             }
         }
@@ -97,6 +98,7 @@ namespace StravaDiscordBot.Discord
                     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var response = await http.PostAsync(urlSuffix, null).ConfigureAwait(false);
+                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -104,10 +106,10 @@ namespace StravaDiscordBot.Discord
                         throw new StravaException(StravaException.StravaErrorType.Unauthorized, $"Access token expired");
 
                     _logger.LogError($"Failed call to strava - {response.StatusCode}");
+                    _logger.LogError(responseContent);
                     throw new StravaException(StravaException.StravaErrorType.Unknown, $"Failed to post to strava, status code: {response.StatusCode}");
                 }
 
-                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 return JsonConvert.DeserializeObject<T>(responseContent);
             }

@@ -17,6 +17,7 @@ namespace StravaDiscordBot.Helpers
         {
             public const string Distance = "Distance";
             public const string Elevation = "Elevation";
+            public const string DistanceRide = "Longest Ride";
             public const string Power = "Weighted Power Ride";
         }
     }

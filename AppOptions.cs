@@ -13,6 +13,7 @@ namespace StravaDiscordBot
         public string StorageConnectionString { get; set; }
         public string BaseUrl { get; set; }
         public List<ulong> AdminDiscordIds { get; set; }
+        public HumioOptions Humio { get; set; }
     }
 
     public class DiscordOptions
@@ -23,5 +24,11 @@ namespace StravaDiscordBot
     {
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
+    }
+
+    public class HumioOptions
+    {
+        public string Url { get; set; }
+        public string Token { get; set; }
     }
 }

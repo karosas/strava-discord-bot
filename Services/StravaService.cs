@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Models;
@@ -15,12 +16,12 @@ namespace StravaDiscordBot.Discord
     public interface IStravaService
     {
         string GetOAuthUrl(string serverId, string discordUserId);
-        Task<bool> CanNewParticipantBeCreated(string serverId, string discordUserId);
-        
+        Task<bool> ParticipantDoesNotExist(string serverId, string discordUserId);
         Task<List<LeaderboardParticipant>> GetAllParticipantsForServerAsync(string serverId);
-        Task<Dictionary<LeaderboardParticipant, List<DetailedActivity>>> GetActivitiesSinceStartDate(string serverId, DateTime start);
+        Task<List<DetailedActivity>> FetchActivitiesForParticipant(LeaderboardParticipant participant, DateTime after);
         Task<LeaderboardParticipant> RefreshAccessTokenAsync(LeaderboardParticipant participant);
-        Task ExchangeCodeAndCreateParticipant(string serverId, string discordUserId, string code);
+        Task ExchangeCodeAndCreateOrRefreshParticipant(string serverId, string discordUserId, string code);
+        Task<AthleteDetailed> GetAthlete(LeaderboardParticipant participant);
     }
 
     public class StravaService : IStravaService
@@ -61,15 +62,52 @@ namespace StravaDiscordBot.Discord
                 }
                 catch (StravaException e) when (e.Error == StravaException.StravaErrorType.Unauthorized)
                 {
-                    await RefreshAccessTokenAsync(participant)
-                        .ConfigureAwait(false);
+                    _logger.LogInformation($"Refresh token expired, refreshing");
+                    try
+                    {
+                        await RefreshAccessTokenAsync(participant)
+                            .ConfigureAwait(false);
 
-                    participantActivities = await _stravaApiService.FetchActivities(participant.StravaAccessToken,  after)
-                       .ConfigureAwait(false);
+                        participantActivities = await _stravaApiService
+                            .FetchActivities(participant.StravaAccessToken, after)
+                            .ConfigureAwait(false);
+                    }
+                    catch (StravaException ex) when (e.Error == StravaException.StravaErrorType.RefreshFailed)
+                    {
+                        _logger.LogError(ex, "Failed to refresh participant while fetching activies");
+                        continue;
+                    }
                 }
                 result.Add(participant, participantActivities);
             }
             return result;
+        }
+        
+        public async Task<List<DetailedActivity>> FetchActivitiesForParticipant(LeaderboardParticipant participant, DateTime after)
+        {
+            try
+            {
+                return await _stravaApiService.FetchActivities(participant.StravaAccessToken, after)
+                    .ConfigureAwait(false);
+            }
+            catch (StravaException e) when (e.Error == StravaException.StravaErrorType.Unauthorized)
+            {
+                _logger.LogInformation($"Refresh token expired, refreshing");
+                try
+                {
+                    await RefreshAccessTokenAsync(participant)
+                        .ConfigureAwait(false);
+
+                    return await _stravaApiService
+                        .FetchActivities(participant.StravaAccessToken, after)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to refresh participant while fetching activies");
+                    throw new StravaException(StravaException.StravaErrorType.RefreshFailed);
+                }
+            }
         }
 
         public string GetOAuthUrl(string serverId, string discordUserId)
@@ -85,7 +123,7 @@ namespace StravaDiscordBot.Discord
                 });
         }
 
-        public async Task<bool> CanNewParticipantBeCreated(string serverId, string discordUserId)
+        public async Task<bool> ParticipantDoesNotExist(string serverId, string discordUserId)
         {
             try
             {
@@ -102,7 +140,17 @@ namespace StravaDiscordBot.Discord
 
         public async Task<LeaderboardParticipant> RefreshAccessTokenAsync(LeaderboardParticipant participant)
         {
-            var authResponse = await _stravaApiService.RefreshAccessTokenAsync(participant.StravaRefreshToken).ConfigureAwait(false);
+            StravaOauthResponse authResponse = null;
+            try
+            { 
+                authResponse = await _stravaApiService.RefreshAccessTokenAsync(participant.StravaRefreshToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to refresh access token for {participant.DiscordUserId}");
+                throw new StravaException(StravaException.StravaErrorType.RefreshFailed);
+            }
 
             participant.StravaAccessToken = authResponse.AccessToken;
             participant.StravaRefreshToken = authResponse.AccessToken;
@@ -111,17 +159,38 @@ namespace StravaDiscordBot.Discord
             return participant;
         }
 
-        public async Task ExchangeCodeAndCreateParticipant(string serverId, string discordUserId, string code)
+        public async Task ExchangeCodeAndCreateOrRefreshParticipant(string serverId, string discordUserId, string code)
         {
             var exchangeResult = await _stravaApiService.ExchangeCodeAsync(code).ConfigureAwait(false);
             var athlete = await _stravaApiService.GetAthlete(exchangeResult.AccessToken);
-            if(_dbContext.Participants.Any(x => x.ServerId == serverId && x.StravaId == athlete.Id.ToString()))
-                throw new InvalidCommandArgumentException("This Strava athlete is already participating in this server's leaderboard.");
 
+            var participant =
+                _dbContext.Participants.FirstOrDefault(x =>
+                    x.ServerId == serverId && x.StravaId == athlete.Id.ToString());
+            if (participant == null)
+            {
+                participant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken, athlete.Id.ToString());
+                 _dbContext.Participants.Add(participant);
+                return;
+            }
 
-            var leaderboardParticipant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken, athlete.Id.ToString(), athlete.Firstname);
-            await _dbContext.Participants.AddAsync(leaderboardParticipant);
+            _dbContext.Participants.Update(participant);
             await _dbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        public async Task<AthleteDetailed> GetAthlete(LeaderboardParticipant participant)
+        {
+            try
+            {
+                return await _stravaApiService.GetAthlete(participant.StravaAccessToken);
+            } 
+            catch(StravaException e) when (e.Error == StravaException.StravaErrorType.Unauthorized)
+            {
+                await RefreshAccessTokenAsync(participant)
+                        .ConfigureAwait(false);
+
+                return await _stravaApiService.GetAthlete(participant.StravaAccessToken);
+            }
         }
     }
 }

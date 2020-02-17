@@ -11,26 +11,7 @@ namespace StravaDiscordBot
     {
         public static void Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .CreateLogger();
-
-            try
-            {
-                Log.Information("Starting web host");
-                CreateHostBuilder(args).Build().Run();
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Host terminated unexpectedly");
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IWebHostBuilder CreateHostBuilder(string[] args) =>

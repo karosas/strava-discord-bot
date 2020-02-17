@@ -26,7 +26,8 @@ namespace StravaDiscordBot.Exceptions
         public enum StravaErrorType
         {
             Unknown,
-            Unauthorized
+            Unauthorized,
+            RefreshFailed
         }
     }
 }
