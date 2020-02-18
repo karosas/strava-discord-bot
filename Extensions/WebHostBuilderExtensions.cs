@@ -25,8 +25,7 @@ namespace StravaDiscordBot.Extensions
                     var options = new AppOptions();
                     builderContext.Configuration.Bind(options);
 
-                    if (options.Humio != null && !string.IsNullOrEmpty(options.Humio.Token) &&
-                        !string.IsNullOrEmpty(options.Humio.Url))
+                    if (options.Humio != null && !string.IsNullOrEmpty(options.Humio.Token))
                     {
                         loggerConfig.WriteTo.HumioSink(new HumioSinkConfiguration
                         {

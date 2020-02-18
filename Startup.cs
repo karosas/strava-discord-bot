@@ -26,7 +26,7 @@ namespace StravaDiscordBot
         private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IConfiguration configuration, IWebHostEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -68,6 +68,7 @@ namespace StravaDiscordBot
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
             _logger = logger;
+            _logger.LogInformation(JsonConvert.SerializeObject(app.ApplicationServices.GetService<AppOptions>(), Formatting.Indented));
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -87,7 +88,7 @@ namespace StravaDiscordBot
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
             using (var serviceScope = serviceScopeFactory.CreateScope())
             {
-                _logger.LogInformation("Ensuring database is created");
+                _logger.LogInformation("Ensuring database is created for ");
                 var dbContext = serviceScope.ServiceProvider.GetService<BotDbContext>();
                 var db = dbContext.Database.EnsureCreated();
             }
@@ -101,7 +102,6 @@ namespace StravaDiscordBot
         private async Task StartDiscordBot(IApplicationBuilder app)
         {
             var options = app.ApplicationServices.GetService<AppOptions>();
-            Console.WriteLine(JsonConvert.SerializeObject(options, Formatting.Indented));
             DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
             DiscordClient.Log += LogAsync;
             app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;

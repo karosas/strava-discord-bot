@@ -28,7 +28,6 @@ namespace StravaDiscordBot
 
     public class HumioOptions
     {
-        public string Url { get; set; }
         public string Token { get; set; }
     }
 }
