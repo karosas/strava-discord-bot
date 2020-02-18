@@ -1,0 +1,17 @@
+﻿#!/bin/bash
+# hooks/build
+# https://docs.docker.com/docker-cloud/builds/advanced/
+
+# $IMAGE_NAME var is injected into the build so the tag is correct.
+echo "[***] Build hook running"
+
+docker build \
+    --build-arg ADMINDISCORDIDS__0=$ADMINDISCORDIDS__0
+    --build-arg ADMINDISCORDIDS__1=$ADMINDISCORDIDS__1
+    --build-arg ASPNETCORE_ENVIRONMENT=$ASPNETCORE_ENVIRONMENT
+    --build-arg CONNECTIONSTRING=$CONNECTIONSTRING
+    --build-arg DISCORD__TOKEN=$DISCORD__TOKEN
+    --build-arg STRAVA__CLIENTID=$STRAVA__CLIENTID
+    --build-arg STRAVA__CLIENTSECRET=$STRAVA__CLIENTSECRET
+    --build-arg HUMIO__TOKEN=$HUMIO__TOKEN
+    -t $IMAGE_NAME .
