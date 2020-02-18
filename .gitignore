@@ -39,3 +39,4 @@ msbuild.wrn
 Properties/PublishProfiles/
 publish.ps1
 leaderboard.db
+*.db

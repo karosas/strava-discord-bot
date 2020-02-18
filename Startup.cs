@@ -85,10 +85,10 @@ namespace StravaDiscordBot
                 var db = dbContext.Database.EnsureCreated();
             }
 
-            /*StartDiscordBot(app)
+            StartDiscordBot(app)
                 .ConfigureAwait(false)
                 .GetAwaiter()
-                .GetResult();*/
+                .GetResult();
         }
 
         private async Task StartDiscordBot(IApplicationBuilder app)

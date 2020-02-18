@@ -36,10 +36,7 @@ namespace StravaDiscordBot.Extensions
                         });
                     }
 
-                    if (builderContext.HostingEnvironment.IsDevelopment())
-                    {
-                        loggerConfig.WriteTo.Console();
-                    }
+                    loggerConfig.WriteTo.Console();
                 }); 
         }
     }
