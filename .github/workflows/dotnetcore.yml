@@ -22,4 +22,4 @@ jobs:
         remote: /root/bot/src/ 
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
-        password: ${{ secrets.REMOTE_PASSWORD }}
+        privateKey: ${{ secrets.REMOTE_SSH_KEY }}
