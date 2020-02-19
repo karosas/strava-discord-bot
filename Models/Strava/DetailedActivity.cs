@@ -42,7 +42,7 @@ namespace StravaDiscordBot.Models.Strava
         public string ExternalId { get; set; }
 
         [JsonProperty("upload_id")]
-        public double UploadId { get; set; }
+        public double? UploadId { get; set; }
 
         [JsonProperty("start_date")]
         public DateTimeOffset? StartDate { get; set; }
