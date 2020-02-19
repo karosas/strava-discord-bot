@@ -126,9 +126,11 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     _logger.LogInformation($"Executing get {discordId}");
 
-                    var embed = await _commandCoreService.GenerateGetDetailedParticipantContent(Context.Guild.Id,
-                        discordId);
-                    await ReplyAsync(embed: embed);
+                    foreach (var embed in await _commandCoreService.GenerateGetDetailedParticipantContent(Context.Guild.Id,
+                        discordId))
+                    {
+                        await ReplyAsync(embed: embed);
+                    }
                 }
                 catch (Exception e)
                 {

@@ -23,7 +23,7 @@ namespace StravaDiscordBot.Discord
 
         Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId);
         Task<List<Embed>> GenerateListLeaderboardParticipantsContent(ulong serverId);
-        Task<Embed> GenerateGetDetailedParticipantContent(ulong serverId, string discordId);
+        Task<List<Embed>> GenerateGetDetailedParticipantContent(ulong serverId, string discordId);
         Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId);
     }
 
@@ -153,8 +153,9 @@ namespace StravaDiscordBot.Discord
             return result;
         }
 
-        public async Task<Embed> GenerateGetDetailedParticipantContent(ulong serverId, string discordId)
+        public async Task<List<Embed>> GenerateGetDetailedParticipantContent(ulong serverId, string discordId)
         {
+            var results = new List<Embed>();
             var participant =
                 _context.Participants.FirstOrDefault(x =>
                     x.ServerId == serverId.ToString() && x.DiscordUserId == discordId);
@@ -163,13 +164,15 @@ namespace StravaDiscordBot.Discord
                 .WithCurrentTimestamp();
             if (participant == null)
             {
-                return embedBuilder
+                results.Add( embedBuilder
                     .WithTitle("Participant Not Found")
-                    .Build();
+                    .Build());
+                return results;
             }
-            
-            var updatedAthleteData = await _stravaService.GetAthlete(participant);
 
+            embedBuilder.WithTitle($"Detailed Info - {discordId}");
+            var updatedAthleteData = await _stravaService.GetAthlete(participant);
+            var embedFieldsAdded = 0;
             foreach (var propertyInfo in updatedAthleteData.GetType().GetProperties())
             {
                 if (!string.IsNullOrEmpty(propertyInfo.Name))
@@ -182,10 +185,23 @@ namespace StravaDiscordBot.Discord
                         .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
                             .WithValue(value)
                             .WithIsInline(false));
+                    embedFieldsAdded++;
+                }
+
+                if (embedFieldsAdded >= 25)
+                {
+                    results.Add(embedBuilder.Build());
+                    embedBuilder = new EmbedBuilder().WithCurrentTimestamp()
+                        .WithTitle($"Detailed Info - {discordId} - CONTINUED");
                 }
             }
 
-            return embedBuilder.Build();
+            if (embedBuilder.Fields.Count > 0)
+            {
+                results.Add(embedBuilder.Build());
+            }
+
+            return results;
         }
 
         public async Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId)
