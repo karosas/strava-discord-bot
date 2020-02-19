@@ -26,4 +26,10 @@
     <PackageReference Include="Serilog.Sinks.Humio" Version="1.0.12" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="docker-compose.development.yml" />
+    <None Remove="docker-compose.production.yml" />
+    <None Remove="development.Dockerfile" />
+    <None Remove="production.Dockerfile" />
+  </ItemGroup>
 </Project>

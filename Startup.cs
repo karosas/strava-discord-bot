@@ -26,16 +26,9 @@ namespace StravaDiscordBot
         private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IWebHostEnvironment env)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables("ASPNETCORE_")
-                .AddUserSecrets("strava-discord-bot-13mdf4j3-23jnejkn");
-
-            Configuration = builder.Build();
+            Configuration = configuration;
         }
         public void ConfigureServices(IServiceCollection services)
         {
