@@ -174,9 +174,13 @@ namespace StravaDiscordBot.Discord
             {
                 if (!string.IsNullOrEmpty(propertyInfo.Name))
                 {
+                    var value = propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A";
+                    if (string.IsNullOrEmpty(value))
+                        value = "N/A";
+
                     embedBuilder
                         .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
-                            .WithValue(propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A")
+                            .WithValue(value)
                             .WithIsInline(false));
                 }
             }
