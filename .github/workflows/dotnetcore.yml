@@ -23,3 +23,10 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         privateKey: ${{ secrets.REMOTE_SSH_KEY }}
+    - name: Restart bot
+      uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: sudo systemctl stop ${{ secrets.REMOTE_SERVICE_NAME }} && sudo systemctl start ${{ secrets.REMOTE_SERVICE_NAME }}
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          privateKey: ${{ secrets.REMOTE_SSH_KEY }}
