@@ -210,8 +210,8 @@ namespace StravaDiscordBot.Discord
             }
 
             _logger.LogInformation("Credentials found, updating");
-            _logger.LogDebug($"Access token changed - {credential.AccessToken == oauthResponse.AccessToken}");
-            _logger.LogDebug($"Refresh token changed - {credential.RefreshToken == oauthResponse.RefreshToken}");
+            _logger.LogDebug($"Access token changed - {credential.AccessToken != oauthResponse.AccessToken}");
+            _logger.LogDebug($"Refresh token changed - {credential.RefreshToken != oauthResponse.RefreshToken}");
 
             credential.UpdateWithNewTokens(oauthResponse);
             _dbContext.Credentials.Update(credential);
