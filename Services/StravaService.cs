@@ -167,10 +167,12 @@ namespace StravaDiscordBot.Discord
             var participant =
                 _dbContext.Participants.FirstOrDefault(x =>
                     x.ServerId == serverId && x.StravaId == athlete.Id.ToString());
+            _logger.LogInformation($"Participant found - {participant != null}");
             if (participant == null)
             {
                 participant = new LeaderboardParticipant(serverId, discordUserId, exchangeResult.AccessToken, exchangeResult.RefreshToken, athlete.Id.ToString());
                  _dbContext.Participants.Add(participant);
+                 await _dbContext.SaveChangesAsync().ConfigureAwait(false);
                 return;
             }
 

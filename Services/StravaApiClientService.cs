@@ -35,6 +35,7 @@ namespace StravaDiscordBot.Discord
         }
         public async Task<StravaOauthResponse> ExchangeCodeAsync(string code)
         {
+            _logger.LogInformation("Exchanging strava code");
             return await PostAsync<StravaOauthResponse>(QueryHelpers.AddQueryString("https://www.strava.com/oauth/token",
                     new Dictionary<string, string>
                     {
@@ -76,6 +77,8 @@ namespace StravaDiscordBot.Discord
                 var response = await http.GetAsync(urlSuffix).ConfigureAwait(false);
                 var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
+                _logger.LogInformation($"Call to {GetUrlSuffixWithoutQuery(urlSuffix)} - {response.StatusCode} Status code");
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -100,6 +103,8 @@ namespace StravaDiscordBot.Discord
                 var response = await http.PostAsync(urlSuffix, null).ConfigureAwait(false);
                 var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
+                _logger.LogInformation($"Call to {GetUrlSuffixWithoutQuery(urlSuffix)} - {response.StatusCode} Status code");
+
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -110,9 +115,13 @@ namespace StravaDiscordBot.Discord
                     throw new StravaException(StravaException.StravaErrorType.Unknown, $"Failed to post to strava, status code: {response.StatusCode}");
                 }
 
-
                 return JsonConvert.DeserializeObject<T>(responseContent);
             }
+        }
+
+        private string GetUrlSuffixWithoutQuery(string urlSuffix)
+        {
+            return urlSuffix.Contains("?") ? urlSuffix.Split("?")[0] : urlSuffix;
         }
     }
 }
