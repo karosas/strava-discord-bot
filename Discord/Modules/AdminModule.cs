@@ -13,7 +13,7 @@ using StravaDiscordBot.Models.Strava;
 
 namespace StravaDiscordBot.Discord.Modules
 {
-    [RequireRole("Owner")]
+    [RequireRole(new[] { "Owner", "Bot Manager"})]
     public class AdminModule : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _commandService;
