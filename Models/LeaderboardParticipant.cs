@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Table;
@@ -10,8 +11,9 @@ namespace StravaDiscordBot.Models
 {
     public class LeaderboardParticipant
     {
-        [Key]
+        [Key, Column(Order=0)]
         public string DiscordUserId { get; set; }
+        [Key, Column(Order=1)]
         public string ServerId { get; set; }
         public string StravaId { get; set; }
         public string StravaAccessToken { get; set; }
