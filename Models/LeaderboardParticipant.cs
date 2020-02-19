@@ -11,9 +11,7 @@ namespace StravaDiscordBot.Models
 {
     public class LeaderboardParticipant
     {
-        [Key, Column(Order=0)]
         public string DiscordUserId { get; set; }
-        [Key, Column(Order=1)]
         public string ServerId { get; set; }
         public string StravaId { get; set; }
         public string StravaAccessToken { get; set; }
