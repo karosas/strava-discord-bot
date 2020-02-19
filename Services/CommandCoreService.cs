@@ -177,7 +177,7 @@ namespace StravaDiscordBot.Discord
             {
                 if (string.IsNullOrEmpty(propertyInfo.Name)) continue;
                 
-                var value = propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A";
+                var value = propertyInfo.GetValue(updatedAthleteData)?.ToString();
                 if (string.IsNullOrEmpty(value)) continue;
                 
                 embedBuilder
