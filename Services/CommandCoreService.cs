@@ -190,15 +190,15 @@ namespace StravaDiscordBot.Discord
             {
                 var matchingActivities = participantActivityPair.Value.Where(activityFilter);
 
-                distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.Distance / 1000))); // meters to km 
-                altitudeResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.TotalElevationGain)));
+                distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.Distance ?? 0d / 1000))); // meters to km 
+                altitudeResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => x.TotalElevationGain ?? 0d)));
                 powerResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
-                                                                                        .Where(x => x.ElapsedTime > 20 * 60)
-                                                                                        .Select(x => x.WeightedAverageWatts)
+                                                                                        .Where(x => (x.ElapsedTime ?? 0d) > 20 * 60)
+                                                                                        .Select(x => x.WeightedAverageWatts ?? 0)
                                                                                         .DefaultIfEmpty()
                                                                                         .Max()));
                 singleLongestRideResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
-                    .Select(x => x.Distance / 1000)
+                    .Select(x => x.Distance ?? 0d / 1000)
                     .DefaultIfEmpty()
                     .Max()));
             }

@@ -15,7 +15,7 @@ namespace StravaDiscordBot.Models.Strava
         public string Username { get; set; }
 
         [JsonProperty("resource_state")]
-        public long ResourceState { get; set; }
+        public long? ResourceState { get; set; }
 
         [JsonProperty("firstname")]
         public string Firstname { get; set; }
@@ -36,7 +36,7 @@ namespace StravaDiscordBot.Models.Strava
         public string Sex { get; set; }
 
         [JsonProperty("premium")]
-        public bool Premium { get; set; }
+        public bool? Premium { get; set; }
 
         [JsonProperty("created_at")]
         public DateTimeOffset CreatedAt { get; set; }
@@ -45,7 +45,7 @@ namespace StravaDiscordBot.Models.Strava
         public DateTimeOffset UpdatedAt { get; set; }
 
         [JsonProperty("badge_type_id")]
-        public long BadgeTypeId { get; set; }
+        public long? BadgeTypeId { get; set; }
 
         [JsonProperty("profile_medium")]
         public Uri ProfileMedium { get; set; }
@@ -60,16 +60,16 @@ namespace StravaDiscordBot.Models.Strava
         public object Follower { get; set; }
 
         [JsonProperty("follower_count")]
-        public long FollowerCount { get; set; }
+        public long? FollowerCount { get; set; }
 
         [JsonProperty("friend_count")]
-        public long FriendCount { get; set; }
+        public long? FriendCount { get; set; }
 
         [JsonProperty("mutual_friend_count")]
-        public long MutualFriendCount { get; set; }
+        public long? MutualFriendCount { get; set; }
 
         [JsonProperty("athlete_type")]
-        public long AthleteType { get; set; }
+        public long? AthleteType { get; set; }
 
         [JsonProperty("date_preference")]
         public string DatePreference { get; set; }
@@ -84,6 +84,6 @@ namespace StravaDiscordBot.Models.Strava
         public object Ftp { get; set; }
 
         [JsonProperty("weight")]
-        public long Weight { get; set; }
+        public long? Weight { get; set; }
     }
 }

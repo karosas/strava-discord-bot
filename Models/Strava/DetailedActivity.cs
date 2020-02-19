@@ -9,7 +9,7 @@ namespace StravaDiscordBot.Models.Strava
     public class DetailedActivity
     {
         [JsonProperty("resource_state")]
-        public long ResourceState { get; set; }
+        public long? ResourceState { get; set; }
 
         [JsonProperty("athlete")]
         public AthleteShort Athlete { get; set; }
@@ -18,16 +18,16 @@ namespace StravaDiscordBot.Models.Strava
         public string Name { get; set; }
 
         [JsonProperty("distance")]
-        public double Distance { get; set; }
+        public double? Distance { get; set; }
 
         [JsonProperty("moving_time")]
-        public long MovingTime { get; set; }
+        public long? MovingTime { get; set; }
 
         [JsonProperty("elapsed_time")]
-        public long ElapsedTime { get; set; }
+        public long? ElapsedTime { get; set; }
 
         [JsonProperty("total_elevation_gain")]
-        public long TotalElevationGain { get; set; }
+        public long? TotalElevationGain { get; set; }
 
         [JsonProperty("type")]
         public string Type { get; set; }
@@ -36,7 +36,7 @@ namespace StravaDiscordBot.Models.Strava
         public object WorkoutType { get; set; }
 
         [JsonProperty("id")]
-        public long Id { get; set; }
+        public long? Id { get; set; }
 
         [JsonProperty("external_id")]
         public string ExternalId { get; set; }
@@ -45,16 +45,16 @@ namespace StravaDiscordBot.Models.Strava
         public double UploadId { get; set; }
 
         [JsonProperty("start_date")]
-        public DateTimeOffset StartDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
 
         [JsonProperty("start_date_local")]
-        public DateTimeOffset StartDateLocal { get; set; }
+        public DateTimeOffset? StartDateLocal { get; set; }
 
         [JsonProperty("timezone")]
         public string Timezone { get; set; }
 
         [JsonProperty("utc_offset")]
-        public long UtcOffset { get; set; }
+        public long? UtcOffset { get; set; }
 
         [JsonProperty("start_latlng")]
         public object StartLatlng { get; set; }
@@ -78,82 +78,82 @@ namespace StravaDiscordBot.Models.Strava
         public object StartLongitude { get; set; }
 
         [JsonProperty("achievement_count")]
-        public long AchievementCount { get; set; }
+        public long? AchievementCount { get; set; }
 
         [JsonProperty("kudos_count")]
-        public long KudosCount { get; set; }
+        public long? KudosCount { get; set; }
 
         [JsonProperty("comment_count")]
-        public long CommentCount { get; set; }
+        public long? CommentCount { get; set; }
 
         [JsonProperty("athlete_count")]
-        public long AthleteCount { get; set; }
+        public long? AthleteCount { get; set; }
 
         [JsonProperty("photo_count")]
-        public long PhotoCount { get; set; }
+        public long? PhotoCount { get; set; }
 
         [JsonProperty("trainer")]
-        public bool Trainer { get; set; }
+        public bool? Trainer { get; set; }
 
         [JsonProperty("commute")]
-        public bool Commute { get; set; }
+        public bool? Commute { get; set; }
 
         [JsonProperty("manual")]
-        public bool Manual { get; set; }
+        public bool? Manual { get; set; }
 
         [JsonProperty("private")]
-        public bool Private { get; set; }
+        public bool? Private { get; set; }
 
         [JsonProperty("flagged")]
-        public bool Flagged { get; set; }
+        public bool? Flagged { get; set; }
 
         [JsonProperty("gear_id")]
         public string GearId { get; set; }
 
         [JsonProperty("from_accepted_tag")]
-        public bool FromAcceptedTag { get; set; }
+        public bool? FromAcceptedTag { get; set; }
 
         [JsonProperty("average_speed")]
-        public double AverageSpeed { get; set; }
+        public double? AverageSpeed { get; set; }
 
         [JsonProperty("max_speed")]
-        public long MaxSpeed { get; set; }
+        public long? MaxSpeed { get; set; }
 
         [JsonProperty("average_cadence")]
-        public double AverageCadence { get; set; }
+        public double? AverageCadence { get; set; }
 
         [JsonProperty("average_watts")]
-        public double AverageWatts { get; set; }
+        public double? AverageWatts { get; set; }
 
         [JsonProperty("weighted_average_watts")]
-        public long WeightedAverageWatts { get; set; }
+        public long? WeightedAverageWatts { get; set; }
 
         [JsonProperty("kilojoules")]
-        public double Kilojoules { get; set; }
+        public double? Kilojoules { get; set; }
 
         [JsonProperty("device_watts")]
-        public bool DeviceWatts { get; set; }
+        public bool? DeviceWatts { get; set; }
 
         [JsonProperty("has_heartrate")]
-        public bool HasHeartrate { get; set; }
+        public bool? HasHeartrate { get; set; }
 
         [JsonProperty("average_heartrate")]
-        public double AverageHeartrate { get; set; }
+        public double? AverageHeartrate { get; set; }
 
         [JsonProperty("max_heartrate")]
-        public long MaxHeartrate { get; set; }
+        public long? MaxHeartrate { get; set; }
 
         [JsonProperty("max_watts")]
-        public long MaxWatts { get; set; }
+        public long? MaxWatts { get; set; }
 
         [JsonProperty("pr_count")]
-        public long PrCount { get; set; }
+        public long? PrCount { get; set; }
 
         [JsonProperty("total_photo_count")]
-        public long TotalPhotoCount { get; set; }
+        public long? TotalPhotoCount { get; set; }
 
         [JsonProperty("has_kudoed")]
-        public bool HasKudoed { get; set; }
+        public bool? HasKudoed { get; set; }
 
         [JsonProperty("suffer_score")]
         public long? SufferScore { get; set; }

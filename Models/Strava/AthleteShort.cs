@@ -12,6 +12,6 @@ namespace StravaDiscordBot.Models.Strava
         public long Id { get; set; }
 
         [JsonProperty("resource_state")]
-        public long ResourceState { get; set; }
+        public long? ResourceState { get; set; }
     }
 }
