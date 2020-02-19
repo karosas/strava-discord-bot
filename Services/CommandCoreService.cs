@@ -172,10 +172,13 @@ namespace StravaDiscordBot.Discord
 
             foreach (var propertyInfo in updatedAthleteData.GetType().GetProperties())
             {
-                embedBuilder
-                    .AddField(efb => efb.WithName(propertyInfo.Name)
-                        .WithValue(propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A")
-                        .WithIsInline(false));
+                if (!string.IsNullOrEmpty(propertyInfo.Name))
+                {
+                    embedBuilder
+                        .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
+                            .WithValue(propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A")
+                            .WithIsInline(false));
+                }
             }
 
             return embedBuilder.Build();
