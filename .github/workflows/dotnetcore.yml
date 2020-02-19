@@ -14,4 +14,12 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Build with dotnet
-      run: dotnet build --configuration Release
+      run: dotnet publish -c Release -o deploy
+    - name: Copy via ssh
+      uses: garygrossgarten/github-action-scp@v0.5.3
+      with:
+        local: /home/runner/work/strava-discord-bot/strava-discord-bot/deploy/
+        remote: /root/bot/src/ 
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        privateKey: ${{ secrets.REMOTE_SSH_KEY }}
