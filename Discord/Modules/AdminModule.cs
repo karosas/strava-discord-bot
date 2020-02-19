@@ -114,6 +114,28 @@ namespace StravaDiscordBot.Discord.Modules
                 }
             }
         }
+        
+        [Command("get")]
+        [Summary("[ADMIN] Get detailed information of the participant")]
+        [RequireToBeWhitelistedServer]
+        public async Task GetDetailedParticipant(string discordId)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    _logger.LogInformation($"Executing get {discordId}");
+
+                    var embed = await _commandCoreService.GenerateGetDetailedParticipantContent(Context.Guild.Id,
+                        discordId);
+                    await ReplyAsync(embed: embed);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "list failed");
+                }
+            }
+        }
 
         [Command("remove")]
         [Summary("[ADMIN] Remove user from leaderboard by discord Id. Usage: `@mention remove 1234`")]

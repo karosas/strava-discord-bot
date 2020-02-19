@@ -17,10 +17,13 @@ namespace StravaDiscordBot.Discord
     public interface ICommandCoreService
     {
         Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username);
+
         Task<List<Embed>> GenerateLeaderboardCommandContent(
             Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivities);
+
         Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId);
         Task<List<Embed>> GenerateListLeaderboardParticipantsContent(ulong serverId);
+        Task<Embed> GenerateGetDetailedParticipantContent(ulong serverId, string discordId);
         Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId);
     }
 
@@ -30,7 +33,8 @@ namespace StravaDiscordBot.Discord
         private readonly BotDbContext _context;
         private readonly IStravaService _stravaService;
 
-        public CommandCoreService(ILogger<CommandCoreService> logger, BotDbContext context, IStravaService stravaService)
+        public CommandCoreService(ILogger<CommandCoreService> logger, BotDbContext context,
+            IStravaService stravaService)
         {
             _logger = logger;
             _context = context;
@@ -42,7 +46,7 @@ namespace StravaDiscordBot.Discord
             if (_context.Leaderboards.Any(x => x.ServerId == serverId.ToString()))
                 return "Seems like a leaderboard is already setup on this server";
 
-            var leaderboard = new Leaderboard { ServerId = serverId.ToString(), ChannelId = channelId.ToString() };
+            var leaderboard = new Leaderboard {ServerId = serverId.ToString(), ChannelId = channelId.ToString()};
             _context.Leaderboards.Add(leaderboard);
             await _context.SaveChangesAsync();
             return "Initialized leaderboard for this server. Users can join by using `join` command.";
@@ -50,17 +54,21 @@ namespace StravaDiscordBot.Discord
 
         public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
-            return $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
+            return
+                $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
         }
 
-        public async Task<List<Embed>> GenerateLeaderboardCommandContent(Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivities)
+        public async Task<List<Embed>> GenerateLeaderboardCommandContent(
+            Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivities)
         {
             var start = DateTime.Now.AddDays(-7);
 
             return new List<Embed>
             {
-                BuildLeaderboardEmbedMessage(groupedActivities, Constants.LeaderboardRideType.RealRide, start, DateTime.Now),
-                BuildLeaderboardEmbedMessage(groupedActivities, Constants.LeaderboardRideType.VirtualRide, start, DateTime.Now)
+                BuildLeaderboardEmbedMessage(groupedActivities, Constants.LeaderboardRideType.RealRide, start,
+                    DateTime.Now),
+                BuildLeaderboardEmbedMessage(groupedActivities, Constants.LeaderboardRideType.VirtualRide, start,
+                    DateTime.Now)
             };
         }
 
@@ -93,29 +101,31 @@ namespace StravaDiscordBot.Discord
 
                 embedBuilder
                     .AddField(efb => efb.WithName("Discord User Id")
-                    .WithValue(participant.DiscordUserId)
-                    .WithIsInline(false));
+                        .WithValue(participant.DiscordUserId)
+                        .WithIsInline(false));
 
                 embedBuilder
-                   .AddField(efb => efb.WithName("Strava First Name")
-                   .WithValue(updatedAthleteData.Firstname ?? "Unknown")
-                   .WithIsInline(false));
+                    .AddField(efb => efb.WithName("Strava First Name")
+                        .WithValue(updatedAthleteData.Firstname ?? "Unknown")
+                        .WithIsInline(false));
 
                 embedBuilder
                     .AddField(efb => efb.WithName("Strava Athlete Id")
-                    .WithValue(participant.StravaId)
-                    .WithIsInline(false));
+                        .WithValue(participant.StravaId)
+                        .WithIsInline(false));
 
                 embedBuilder
-                   .AddField(efb => efb.WithName("Strava Body Weight")
-                   .WithValue((updatedAthleteData.Weight ?? 0) == 0 ? "Not Specified" : updatedAthleteData.Weight.ToString())
-                   .WithIsInline(false));
+                    .AddField(efb => efb.WithName("Strava Body Weight")
+                        .WithValue((updatedAthleteData.Weight ?? 0) == 0
+                            ? "Not Specified"
+                            : updatedAthleteData.Weight.ToString())
+                        .WithIsInline(false));
 
                 embedBuilder
-                   .AddField(efb => efb.WithName("Strava FTP")
-                   .WithValue(updatedAthleteData.Ftp?.ToString() ?? "Not Specified")
-                   .WithIsInline(false));
-                
+                    .AddField(efb => efb.WithName("Strava FTP")
+                        .WithValue(updatedAthleteData.Ftp?.ToString() ?? "Not Specified")
+                        .WithIsInline(false));
+
                 result.Add(embedBuilder.Build());
             }
 
@@ -126,24 +136,55 @@ namespace StravaDiscordBot.Discord
                         .WithTitle("No participants found")
                         .WithCurrentTimestamp()
                         .Build()
-                    );
+                );
             }
 
             if (expiredAthletes > 0)
             {
                 result.Add(
                     new EmbedBuilder()
-                        .WithTitle($"List include {expiredAthletes} expired participants who need to manually refresh access.")
+                        .WithTitle(
+                            $"List include {expiredAthletes} expired participants who need to manually refresh access.")
                         .WithCurrentTimestamp()
                         .Build()
                 );
             }
+
             return result;
+        }
+
+        public async Task<Embed> GenerateGetDetailedParticipantContent(ulong serverId, string discordId)
+        {
+            var participant =
+                _context.Participants.FirstOrDefault(x =>
+                    x.ServerId == serverId.ToString() && x.DiscordUserId == discordId);
+
+            var embedBuilder = new EmbedBuilder()
+                .WithCurrentTimestamp();
+            if (participant == null)
+            {
+                return embedBuilder
+                    .WithTitle("Participant Not Found")
+                    .Build();
+            }
+            
+            var updatedAthleteData = await _stravaService.GetAthlete(participant);
+
+            foreach (var propertyInfo in updatedAthleteData.GetType().GetProperties())
+            {
+                embedBuilder
+                    .AddField(efb => efb.WithName(propertyInfo.Name)
+                        .WithValue(propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A")
+                        .WithIsInline(false));
+            }
+
+            return embedBuilder.Build();
         }
 
         public async Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId)
         {
-            var participant = _context.Participants.SingleOrDefault(x => x.DiscordUserId == discordId && x.ServerId == serverId.ToString());
+            var participant = _context.Participants.SingleOrDefault(x =>
+                x.DiscordUserId == discordId && x.ServerId == serverId.ToString());
             if (participant == null)
                 return $"Participant with id {discordId} wasn't found.";
 
@@ -152,11 +193,14 @@ namespace StravaDiscordBot.Discord
             return $"Participant with id {discordId} was removed.";
         }
 
-        private Embed BuildLeaderboardEmbedMessage(Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type, DateTime start, DateTime end)
+        private Embed BuildLeaderboardEmbedMessage(
+            Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type,
+            DateTime start, DateTime end)
         {
             var categoryResult = GetTopResultsForCategory(groupedActivitiesByParticipant, x => x.Type == type);
             var embedBuilder = new EmbedBuilder()
-                .WithTitle($"'{type}' leaderboard for '{ start.ToString("yyyy MMMM dd")} - { end.ToString("yyyy MMMM dd")}'")
+                .WithTitle(
+                    $"'{type}' leaderboard for '{start.ToString("yyyy MMMM dd")} - {end.ToString("yyyy MMMM dd")}'")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
 
@@ -164,23 +208,27 @@ namespace StravaDiscordBot.Discord
             foreach (var challengeResult in categoryResult.ChallengeByChallengeResultDictionary)
             {
                 embedBuilder.AddField(efb => efb.WithName("Category")
-                                                .WithValue($"{challengeResult.Key}")
-                                                .WithIsInline(false));
+                    .WithValue($"{challengeResult.Key}")
+                    .WithIsInline(false));
                 var place = 1;
                 foreach (var participantResult in challengeResult.Value)
                 {
                     embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
-                                                    .WithName($"{OutputFormatters.PlaceToEmote(place)} - {OutputFormatters.ParticipantResultForChallenge(challengeResult.Key, participantResult.Value)}")
-                                                    .WithIsInline(true));
+                        .WithName(
+                            $"{OutputFormatters.PlaceToEmote(place)} - {OutputFormatters.ParticipantResultForChallenge(challengeResult.Key, participantResult.Value)}")
+                        .WithIsInline(true));
                     place++;
                     if (place > 3)
                         break;
                 }
             }
+
             return embedBuilder.Build();
         }
 
-        private CategoryResult GetTopResultsForCategory(Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict, Func<DetailedActivity, bool> activityFilter)
+        private CategoryResult GetTopResultsForCategory(
+            Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict,
+            Func<DetailedActivity, bool> activityFilter)
         {
             var distanceResult = new List<ParticipantResult>();
             var altitudeResult = new List<ParticipantResult>();
@@ -191,13 +239,15 @@ namespace StravaDiscordBot.Discord
             {
                 var matchingActivities = participantActivityPair.Value.Where(activityFilter);
 
-                distanceResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => (x.Distance ?? 0d) / 1000))); // meters to km 
-                altitudeResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities.Sum(x => (x.TotalElevationGain ?? 0d))));
+                distanceResult.Add(new ParticipantResult(participantActivityPair.Key,
+                    matchingActivities.Sum(x => (x.Distance ?? 0d) / 1000))); // meters to km 
+                altitudeResult.Add(new ParticipantResult(participantActivityPair.Key,
+                    matchingActivities.Sum(x => (x.TotalElevationGain ?? 0d))));
                 powerResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
-                                                                                        .Where(x => (x.ElapsedTime ?? 0d) > 20 * 60)
-                                                                                        .Select(x => (x.WeightedAverageWatts ?? 0))
-                                                                                        .DefaultIfEmpty()
-                                                                                        .Max()));
+                    .Where(x => (x.ElapsedTime ?? 0d) > 20 * 60)
+                    .Select(x => (x.WeightedAverageWatts ?? 0))
+                    .DefaultIfEmpty()
+                    .Max()));
                 singleLongestRideResult.Add(new ParticipantResult(participantActivityPair.Key, matchingActivities
                     .Select(x => (x.Distance ?? 0d) / 1000)
                     .DefaultIfEmpty()
@@ -208,10 +258,13 @@ namespace StravaDiscordBot.Discord
             {
                 ChallengeByChallengeResultDictionary = new Dictionary<string, List<ParticipantResult>>
                 {
-                    { Constants.ChallengeType.Distance,  distanceResult.OrderByDescending(x => x.Value).ToList() },
-                    { Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).ToList() },
-                    { Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).ToList() },
-                    { Constants.ChallengeType.DistanceRide, singleLongestRideResult.OrderByDescending(x => x.Value).ToList() }
+                    {Constants.ChallengeType.Distance, distanceResult.OrderByDescending(x => x.Value).ToList()},
+                    {Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).ToList()},
+                    {Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).ToList()},
+                    {
+                        Constants.ChallengeType.DistanceRide,
+                        singleLongestRideResult.OrderByDescending(x => x.Value).ToList()
+                    }
                 }
             };
         }
