@@ -108,7 +108,7 @@ namespace StravaDiscordBot.Discord
 
                 embedBuilder
                    .AddField(efb => efb.WithName("Strava Body Weight")
-                   .WithValue(updatedAthleteData.Weight == 0 ? "Not Specified" : updatedAthleteData.Weight.ToString())
+                   .WithValue((updatedAthleteData.Weight ?? 0) == 0 ? "Not Specified" : updatedAthleteData.Weight.ToString())
                    .WithIsInline(false));
 
                 embedBuilder
