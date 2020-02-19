@@ -14,6 +14,7 @@ namespace StravaDiscordBot.Storage
 
         public DbSet<LeaderboardParticipant> Participants { get; set; }
         public DbSet<Leaderboard> Leaderboards { get; set; }
+        public DbSet<StravaCredential> Credentials { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
