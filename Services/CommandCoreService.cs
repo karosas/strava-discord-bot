@@ -175,25 +175,23 @@ namespace StravaDiscordBot.Discord
             var embedFieldsAdded = 0;
             foreach (var propertyInfo in updatedAthleteData.GetType().GetProperties())
             {
-                if (!string.IsNullOrEmpty(propertyInfo.Name))
-                {
-                    var value = propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A";
-                    if (string.IsNullOrEmpty(value))
-                        value = "N/A";
+                if (string.IsNullOrEmpty(propertyInfo.Name)) continue;
+                
+                var value = propertyInfo.GetValue(updatedAthleteData)?.ToString() ?? "N/A";
+                if (string.IsNullOrEmpty(value)) continue;
+                
+                embedBuilder
+                    .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
+                        .WithValue(value)
+                        .WithIsInline(false));
+                embedFieldsAdded++;
+            }
 
-                    embedBuilder
-                        .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
-                            .WithValue(value)
-                            .WithIsInline(false));
-                    embedFieldsAdded++;
-                }
-
-                if (embedFieldsAdded >= 25)
-                {
-                    results.Add(embedBuilder.Build());
-                    embedBuilder = new EmbedBuilder().WithCurrentTimestamp()
-                        .WithTitle($"Detailed Info - {discordId} - CONTINUED");
-                }
+            if (embedFieldsAdded >= 25)
+            {
+                results.Add(embedBuilder.Build());
+                embedBuilder = new EmbedBuilder().WithCurrentTimestamp()
+                    .WithTitle($"Detailed Info - {discordId} - CONTINUED");
             }
 
             if (embedBuilder.Fields.Count > 0)
