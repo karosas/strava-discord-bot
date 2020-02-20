@@ -3,10 +3,12 @@
 on:
   push:
     branches-ignore:
-      - "master"
+      - master
     paths-ignore:
       - '.github/**'
   pull-request:
+    branches:
+      - master
 
 jobs:
   build:
