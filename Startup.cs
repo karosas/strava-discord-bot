@@ -49,6 +49,10 @@ namespace StravaDiscordBot
             services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
             services.AddSingleton<IStravaApiClientService, StravaApiClientService>();
             services.AddSingleton<IStravaService, StravaService>();
+            services.AddSingleton<ILeaderboardService, LeaderboardService>();
+            services.AddSingleton<ILeaderboardParticipantService, LeaderboardParticipantService>();
+
+            services.AddSingleton<IEmbedBuilderService, EmbedBuilderService>();
 
             services.AddSingleton<ICommandCoreService, CommandCoreService>();
 
