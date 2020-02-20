@@ -17,7 +17,7 @@ namespace StravaDiscordBot.Discord
 {
     public interface ICommandCoreService
     {
-        Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username);
+        string GenerateJoinCommandContent(ulong serverId, ulong userId, string username);
         Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId);
         Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId);
     }
@@ -47,7 +47,7 @@ namespace StravaDiscordBot.Discord
             return "Initialized leaderboard for this server. Users can join by using `join` command.";
         }
 
-        public async Task<string> GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
+        public string GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
             return
                 $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";

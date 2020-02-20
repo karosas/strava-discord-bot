@@ -57,7 +57,7 @@ namespace StravaDiscordBot.Discord.Modules
         {
             try
             {
-                var responseText = await _commandCoreService.GenerateJoinCommandContent(Context.Guild.Id, Context.User.Id, Context.User.Mention);
+                var responseText = _commandCoreService.GenerateJoinCommandContent(Context.Guild.Id, Context.User.Id, Context.User.Mention);
                 var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync(responseText);
             } 
