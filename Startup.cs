@@ -60,8 +60,6 @@ namespace StravaDiscordBot
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
-            _logger = logger;
-            _logger.LogInformation(JsonConvert.SerializeObject(app.ApplicationServices.GetService<AppOptions>(), Formatting.Indented));
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -83,17 +81,18 @@ namespace StravaDiscordBot
             {
                 _logger.LogInformation("Ensuring database is created for ");
                 var dbContext = serviceScope.ServiceProvider.GetService<BotDbContext>();
-                var db = dbContext.Database.EnsureCreated();
+                dbContext.Database.EnsureCreated();
             }
 
-            StartDiscordBot(app)
+            StartDiscordBot(app, logger)
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();
         }
 
-        private async Task StartDiscordBot(IApplicationBuilder app)
+        private async Task StartDiscordBot(IApplicationBuilder app, ILogger<Startup> logger)
         {
+            _logger = logger;
             var options = app.ApplicationServices.GetService<AppOptions>();
             DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
             DiscordClient.Log += LogAsync;
