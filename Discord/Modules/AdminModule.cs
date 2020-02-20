@@ -166,7 +166,7 @@ namespace StravaDiscordBot.Discord.Modules
         }
 
         [Command("get")]
-        [Summary("[ADMIN] Get detailed information of the participant")]
+        [Summary("[ADMIN] Get detailed information of the participant by discord user ID. Usage: `@mention get 1234`")]
         [RequireToBeWhitelistedServer]
         public async Task GetDetailedParticipant(string discordId)
         {
@@ -201,7 +201,7 @@ namespace StravaDiscordBot.Discord.Modules
         }
 
         [Command("remove")]
-        [Summary("[ADMIN] Remove user from leaderboard by discord Id. Usage: `@mention remove 1234`")]
+        [Summary("[ADMIN] Remove user from leaderboard by discord user ID. Usage: `@mention remove 1234`")]
         [RequireToBeWhitelistedServer]
         public async Task RemoveParticipant(string discordId)
         {
