@@ -31,6 +31,7 @@ namespace StravaDiscordBot
         {
             Configuration = configuration;
         }
+
         public void ConfigureServices(IServiceCollection services)
         {
             var appOptions = new AppOptions();
@@ -77,14 +78,16 @@ namespace StravaDiscordBot
                 ForwardedHeaders = ForwardedHeaders.All
             });
 
-            app.UseEndpoints(x => {
-                x.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-            });
+            app.UseEndpoints(x => { x.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}"); });
 
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
             using (var serviceScope = serviceScopeFactory.CreateScope())
             {
-                _logger.LogInformation("Ensuring database is created for ");
+                serviceScope
+                    .ServiceProvider
+                    .GetService<ILogger<Startup>>()
+                    .LogInformation("Ensuring database is created for ");
+
                 var dbContext = serviceScope.ServiceProvider.GetService<BotDbContext>();
                 dbContext.Database.EnsureCreated();
             }
