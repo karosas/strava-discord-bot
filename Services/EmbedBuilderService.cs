@@ -84,7 +84,7 @@ namespace StravaDiscordBot.Discord
                 embedBuilder
                     .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
                         .WithValue(value)
-                        .WithIsInline(false));
+                        .WithIsInline(true));
                 embedFieldsAdded++;
             }
 
