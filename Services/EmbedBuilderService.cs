@@ -73,22 +73,21 @@ namespace StravaDiscordBot.Discord
                 .WithCurrentTimestamp()
                 .WithColor(Color.Gold);
 
-            var participantResults = categoryResult.ChallengeByChallengeResultDictionary.FirstOrDefault();
-            if (participantResults.Value == null)
+            if (!categoryResult.ChallengeByChallengeResultDictionary.Any())
             {
                 embedBuilder.WithDescription("Something went wrong");
                 return embedBuilder.Build();
             }
-
-            embedBuilder.AddField("Category", participantResults.Key, true);
-            foreach (var participantResult in participantResults.Value)
+            
+            foreach (var (categoryName, participantResults) in categoryResult.ChallengeByChallengeResultDictionary)
             {
-                embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
-                    .WithName(
-                        $"{OutputFormatters.ParticipantResultForChallenge(participantResults.Key, participantResult.Value)}")
-                    .WithIsInline(true));
+                foreach (var participantResult in participantResults)
+                {
+                    embedBuilder.AddField(categoryName,
+                        OutputFormatters.ParticipantResultForChallenge(categoryName, participantResult.Value), true);
+                }
             }
-
+            
             return embedBuilder.Build();
         }
 
