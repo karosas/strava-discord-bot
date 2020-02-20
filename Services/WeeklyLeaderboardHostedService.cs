@@ -7,8 +7,10 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Services;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Discord
@@ -17,47 +19,67 @@ namespace StravaDiscordBot.Discord
     {
         private const string JOB_CRON_EXPRESSION = "0 8 * * 1";
 
-        private ILogger<WeeklyLeaderboardHostedService> _logger;
-        private ICommandCoreService _commandCoreService;
-        private DiscordSocketClient _discordSocketClient;
-        private IStravaService _stravaService;
-        private BotDbContext _context;
+        private readonly ILogger<WeeklyLeaderboardHostedService> _logger;
+        private readonly IEmbedBuilderService _embedBuilderService;
+        private readonly DiscordSocketClient _discordSocketClient;
+        private readonly IStravaService _stravaService;
+        private readonly ILeaderboardService _leaderboardService;
+        private readonly ILeaderboardParticipantService _participantService;
 
-        public WeeklyLeaderboardHostedService(ILogger<WeeklyLeaderboardHostedService> logger, DiscordSocketClient discordClient, ICommandCoreService commandCoreService, BotDbContext context, IStravaService stravaService) : base(JOB_CRON_EXPRESSION, TimeZoneInfo.Utc)
+        public WeeklyLeaderboardHostedService(ILogger<WeeklyLeaderboardHostedService> logger,
+            DiscordSocketClient discordClient,
+            IStravaService stravaService,
+            IEmbedBuilderService embedBuilderService,
+            ILeaderboardService leaderboardService,
+            ILeaderboardParticipantService participantService) 
+            : base(JOB_CRON_EXPRESSION, TimeZoneInfo.Utc)
         {
             _logger = logger;
-            _commandCoreService = commandCoreService;
             _discordSocketClient = discordClient;
-            _context = context;
             _stravaService = stravaService;
+            _embedBuilderService = embedBuilderService;
+            _leaderboardService = leaderboardService;
+            _participantService = participantService;
         }
 
         public override async Task DoWork(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Executing leaderboard hosted service");
-            foreach(var leaderboard in _context.Leaderboards)
+            foreach(var leaderboard in await _leaderboardService.GetAllLeaderboards())
             {
+                var start = DateTime.Now.AddDays(-7);
                 var groupedActivitiesByParticipant = new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
-                var participants = await _stravaService.GetAllParticipantsForServerAsync(leaderboard.ServerId);
+                var participants = await _participantService.GetAllParticipantsForServerAsync(leaderboard.ServerId);
                 foreach (var participant in participants)
                 {
                     try
                     {
-                        groupedActivitiesByParticipant.Add(participant, await _stravaService.FetchActivitiesForParticipant(participant, DateTime.Now.AddDays(-7)));
+                        groupedActivitiesByParticipant.Add(participant, await _stravaService.FetchActivitiesForParticipant(participant, start));
                     }
                     catch (StravaException e) when (e.Error == StravaException.StravaErrorType.RefreshFailed)
                     {
                         await AskToRelogin(participant.DiscordUserId);
                     }
                 }
-
-                var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(groupedActivitiesByParticipant);
-                
                 var channel = _discordSocketClient.GetChannel(ulong.Parse(leaderboard.ChannelId)) as SocketTextChannel;
-                foreach(var embed in embeds)
-                {
-                    await channel.SendMessageAsync(embed: embed);
-                }
+
+                await channel.SendMessageAsync(embed: _embedBuilderService
+                    .BuildLeaderboardEmbed(
+                        groupedActivitiesByParticipant,
+                        Constants.LeaderboardRideType.RealRide,
+                        start,
+                        DateTime.Now
+                    )
+                );
+                    
+                await channel.SendMessageAsync(embed: _embedBuilderService
+                    .BuildLeaderboardEmbed(
+                        groupedActivitiesByParticipant,
+                        Constants.LeaderboardRideType.VirtualRide,
+                        start,
+                        DateTime.Now
+                    )
+                );
             }
         }
         

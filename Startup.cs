@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 using Serilog;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Discord.Modules;
+using StravaDiscordBot.Services;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -8,26 +9,33 @@ using Discord.WebSocket;
 using StravaDiscordBot.Discord.Utilities;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord.Modules
 {
-    [RequireRole(new[] { "Owner", "Bot Manager"})]
+    [RequireRole(new[] {"Owner", "Bot Manager"})]
     public class AdminModule : ModuleBase<SocketCommandContext>
     {
-        private readonly CommandService _commandService;
         private readonly ICommandCoreService _commandCoreService;
         private readonly IStravaService _stravaService;
         private readonly ILogger<AdminModule> _logger;
+        private readonly IEmbedBuilderService _embedBuilderService;
+        private readonly ILeaderboardParticipantService _participantService;
 
-        public AdminModule(CommandService commandService, ICommandCoreService commandCoreService,
-            ILogger<AdminModule> logger, IStravaService stravaService, DiscordSocketClient client)
+        public AdminModule(ICommandCoreService commandCoreService,
+            ILogger<AdminModule> logger,
+            IStravaService stravaService,
+            IEmbedBuilderService embedBuilderService,
+            ILeaderboardParticipantService participantService)
         {
-            _commandService = commandService;
             _commandCoreService = commandCoreService;
             _logger = logger;
             _stravaService = stravaService;
+            _embedBuilderService = embedBuilderService;
+            _participantService = participantService;
         }
 
         [Command("init")]
@@ -39,9 +47,10 @@ namespace StravaDiscordBot.Discord.Modules
                 try
                 {
                     _logger.LogInformation("Executing init");
-                    if (Context.Guild?.Id == null || Context.Guild?.Id == default)
+                    if (Context.Guild?.Id == null)
                     {
                         await ReplyAsync("Doesn't seem like this is written inside a server.");
+                        return;
                     }
 
                     await ReplyAsync(
@@ -64,13 +73,19 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 try
                 {
-                    var groupedActivitiesByParticipant = new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
-                    var participants = await _stravaService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+                    _logger.LogInformation("Executing leaderboard command");
+                    var start = DateTime.Now.AddDays(-7);
+                    var groupedActivitiesByParticipant =
+                        new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
+                    var participants =
+                        await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
                     foreach (var participant in participants)
                     {
                         try
                         {
-                            groupedActivitiesByParticipant.Add(participant, await _stravaService.FetchActivitiesForParticipant(participant, DateTime.Now.AddDays(-7)));
+                            groupedActivitiesByParticipant.Add(participant,
+                                await _stravaService.FetchActivitiesForParticipant(participant,
+                                    start));
                         }
                         catch (StravaException e) when (e.Error == StravaException.StravaErrorType.RefreshFailed)
                         {
@@ -78,12 +93,23 @@ namespace StravaDiscordBot.Discord.Modules
                         }
                     }
 
-                    var embeds = await _commandCoreService.GenerateLeaderboardCommandContent(groupedActivitiesByParticipant);
-                    _logger.LogInformation("Executing leaderboard");
-                    foreach (var embed in embeds)
-                    {
-                        await ReplyAsync(embed: embed);
-                    }
+                    await ReplyAsync(embed: _embedBuilderService
+                        .BuildLeaderboardEmbed(
+                            groupedActivitiesByParticipant,
+                            Constants.LeaderboardRideType.RealRide,
+                            start,
+                            DateTime.Now
+                        )
+                    );
+                    
+                    await ReplyAsync(embed: _embedBuilderService
+                        .BuildLeaderboardEmbed(
+                            groupedActivitiesByParticipant,
+                            Constants.LeaderboardRideType.VirtualRide,
+                            start,
+                            DateTime.Now
+                        )
+                    );
                 }
                 catch (Exception e)
                 {
@@ -102,8 +128,34 @@ namespace StravaDiscordBot.Discord.Modules
                 try
                 {
                     _logger.LogInformation("Executing list");
-                    foreach (var embed in await _commandCoreService.GenerateListLeaderboardParticipantsContent(
-                        Context.Guild.Id))
+                    var embeds = new List<Embed>();
+                    var participants = await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+                    foreach (var participant in participants)
+                    {
+                        AthleteDetailed updatedAthleteData = null;
+                        try
+                        {
+                            updatedAthleteData = await _stravaService.GetAthlete(participant);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(e, $"Failed to fetch athlete while executing list command");
+                        }
+
+                        embeds.Add(_embedBuilderService.BuildAthleteInfoEmbed(participant, updatedAthleteData));
+                    }
+
+                    if (!embeds.Any())
+                    {
+                        embeds.Add(
+                            new EmbedBuilder()
+                                .WithTitle("No participants found")
+                                .WithCurrentTimestamp()
+                                .Build()
+                        );
+                    }
+
+                    foreach (var embed in embeds)
                     {
                         await ReplyAsync(embed: embed);
                     }
@@ -114,7 +166,7 @@ namespace StravaDiscordBot.Discord.Modules
                 }
             }
         }
-        
+
         [Command("get")]
         [Summary("[ADMIN] Get detailed information of the participant")]
         [RequireToBeWhitelistedServer]
@@ -126,8 +178,19 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     _logger.LogInformation($"Executing get {discordId}");
 
-                    foreach (var embed in await _commandCoreService.GenerateGetDetailedParticipantContent(Context.Guild.Id,
-                        discordId))
+                    var participant =
+                        await _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), discordId);
+                    if (participant == null)
+                    {
+                        await ReplyAsync(embed: _embedBuilderService.BuildSimpleEmbed(
+                            "Not Found",
+                            "Couldn't find participant with this discord id")
+                        );
+                        return;
+                    }
+
+                    var athlete = await _stravaService.GetAthlete(participant);
+                    foreach (var embed in _embedBuilderService.BuildDetailedAthleteEmbeds(participant, athlete))
                     {
                         await ReplyAsync(embed: embed);
                     }
@@ -171,7 +234,6 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 _logger.LogError(e, "Failed to deliver relogin message");
             }
-           
         }
     }
 }
