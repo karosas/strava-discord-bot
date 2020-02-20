@@ -16,6 +16,9 @@ namespace StravaDiscordBot.Discord
             Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type,
             DateTime start, DateTime end);
 
+        Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant, List<DetailedActivity> activities,
+            string type, DateTime start, DateTime end);
+
         Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, AthleteDetailed athlete);
         List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, AthleteDetailed athlete);
         Embed BuildSimpleEmbed(string title, string description);
@@ -30,7 +33,7 @@ namespace StravaDiscordBot.Discord
             var categoryResult = GetTopResultsForCategory(groupedActivitiesByParticipant, x => x.Type == type);
             var embedBuilder = new EmbedBuilder()
                 .WithTitle(
-                    $"'{type}' leaderboard for '{start.ToString("yyyy MMMM dd")} - {end.ToString("yyyy MMMM dd")}'")
+                    $"'{type}' leaderboard for '{start:yyyy MMMM dd} - {end:yyyy MMMM dd}'")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
 
@@ -51,6 +54,39 @@ namespace StravaDiscordBot.Discord
                     if (place > 3)
                         break;
                 }
+            }
+
+            return embedBuilder.Build();
+        }
+
+        public Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant,
+            List<DetailedActivity> activities, string type, DateTime start,
+            DateTime end)
+        {
+            var categoryResult = GetTopResultsForCategory(
+                new Dictionary<LeaderboardParticipant, List<DetailedActivity>> {{participant, activities}},
+                x => x.Type == type);
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle(
+                    $"'{type}' stats for '{start:yyyy MMMM dd} - {end:yyyy MMMM dd}'")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Gold);
+
+            var participantResults = categoryResult.ChallengeByChallengeResultDictionary.FirstOrDefault();
+            if (participantResults.Value == null)
+            {
+                embedBuilder.WithDescription("Something went wrong");
+                return embedBuilder.Build();
+            }
+
+            embedBuilder.AddField("Category", participantResults.Key, true);
+            foreach (var participantResult in participantResults.Value)
+            {
+                embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
+                    .WithName(
+                        $"{OutputFormatters.ParticipantResultForChallenge(participantResults.Key, participantResult.Value)}")
+                    .WithIsInline(true));
             }
 
             return embedBuilder.Build();
