@@ -12,11 +12,11 @@ namespace StravaDiscordBot.Controllers
 {
     [Route("strava")]
     [ApiController]
-    public class ViiaController : ControllerBase
+    public class StravaController : ControllerBase
     {
-        private readonly ILogger<ViiaController> _logger;
+        private readonly ILogger<StravaController> _logger;
         private readonly IStravaService _stravaService;
-        public ViiaController(ILogger<ViiaController> logger, IStravaService stravaService)
+        public StravaController(ILogger<StravaController> logger, IStravaService stravaService)
         {
             _logger = logger;
             _stravaService = stravaService;
