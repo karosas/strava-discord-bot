@@ -78,7 +78,7 @@ namespace StravaDiscordBot.Services
                     {"response_type", "code"},
                     {"redirect_uri", $"{_options.BaseUrl}/strava/callback/{serverId}/{discordUserId}"},
                     {"approval_prompt", "force"},
-                    {"scope", "read,activity:read"}
+                    {"scope", "read,activity:read,activity:read_all,profile:read_all,"}
                 });
         }
 
