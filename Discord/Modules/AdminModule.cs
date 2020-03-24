@@ -22,18 +22,24 @@ namespace StravaDiscordBot.Discord.Modules
         private readonly ILogger<AdminModule> _logger;
         private readonly IEmbedBuilderService _embedBuilderService;
         private readonly ILeaderboardParticipantService _participantService;
+        private readonly ILeaderboardResultService _leaderboardResultService;
+        private readonly IRoleService _roleServic;
 
         public AdminModule(ICommandCoreService commandCoreService,
             ILogger<AdminModule> logger,
             IStravaService stravaService,
             IEmbedBuilderService embedBuilderService,
-            ILeaderboardParticipantService participantService)
+            ILeaderboardParticipantService participantService, 
+            ILeaderboardResultService leaderboardResultService, 
+            IRoleService roleServic)
         {
             _commandCoreService = commandCoreService;
             _logger = logger;
             _stravaService = stravaService;
             _embedBuilderService = embedBuilderService;
             _participantService = participantService;
+            _leaderboardResultService = leaderboardResultService;
+            _roleServic = roleServic;
         }
 
         [Command("init")]
@@ -91,19 +97,23 @@ namespace StravaDiscordBot.Discord.Modules
                         }
                     }
 
+                    var realRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
+                        groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide,
+                        x => x.Type == Constants.LeaderboardRideType.RealRide);
                     await ReplyAsync(embed: _embedBuilderService
                         .BuildLeaderboardEmbed(
-                            groupedActivitiesByParticipant,
-                            Constants.LeaderboardRideType.RealRide,
+                            realRideCategoryResult,
                             start,
                             DateTime.Now
                         )
                     );
                     
+                    var virtualRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
+                        groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide,
+                        x => x.Type == Constants.LeaderboardRideType.VirtualRide);
                     await ReplyAsync(embed: _embedBuilderService
                         .BuildLeaderboardEmbed(
-                            groupedActivitiesByParticipant,
-                            Constants.LeaderboardRideType.VirtualRide,
+                            virtualRideCategoryResult,
                             start,
                             DateTime.Now
                         )
@@ -215,6 +225,50 @@ namespace StravaDiscordBot.Discord.Modules
                 catch (Exception e)
                 {
                     _logger.LogError(e, "list failed");
+                }
+            }
+        }
+
+        [Command("grant-winner-role")]
+        [Summary(
+            "[ADMIN] Grant leaderboard winner role to discord user ID (for testing purposes). Usage: `@mention grant-winner-role 1234`")]
+        [RequireToBeWhitelistedServer]
+        public async Task GrantWinnerRole(string discordId)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    await _roleServic.GrantUserRoleIfExists(Context.Guild.Id.ToString(), discordId,
+                        Constants.LeaderboardWinnerRoleName);
+                    await ReplyAsync("Success");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Failed to grant role for user {discordId}");
+                    await ReplyAsync($"Failed - {e.Message}");
+                }
+            }
+        }
+        
+        [Command("remove-winner-role")]
+        [Summary(
+            "[ADMIN] Remove leaderboard winner role from discord user ID (for testing purposes). Usage: `@mention remove-winner-role 1234`")]
+        [RequireToBeWhitelistedServer]
+        public async Task RemoveWinnerRole(string discordId)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    await _roleServic.RemoveUserRole(Context.Guild.Id.ToString(), discordId,
+                        Constants.LeaderboardWinnerRoleName);
+                    await ReplyAsync("Success");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Failed to remove role for user {discordId}");
+                    await ReplyAsync($"Failed - {e.Message}");
                 }
             }
         }

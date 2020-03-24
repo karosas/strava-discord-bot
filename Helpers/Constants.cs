@@ -7,6 +7,7 @@ namespace StravaDiscordBot.Helpers
 {
     public static class Constants
     {
+        public const string LeaderboardWinnerRoleName = "Strava Leaderboard";
         public class LeaderboardRideType
         {
             public const string RealRide = "Ride";

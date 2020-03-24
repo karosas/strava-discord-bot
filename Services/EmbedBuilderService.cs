@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Discord;
-using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord
 {
     public interface IEmbedBuilderService
     {
-        Embed BuildLeaderboardEmbed(
-            Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type,
-            DateTime start, DateTime end);
+        Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end);
 
         Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant, List<DetailedActivity> activities,
             string type, DateTime start, DateTime end);
@@ -26,14 +23,16 @@ namespace StravaDiscordBot.Discord
 
     public class EmbedBuilderService : IEmbedBuilderService
     {
-        public Embed BuildLeaderboardEmbed(
-            Dictionary<LeaderboardParticipant, List<DetailedActivity>> groupedActivitiesByParticipant, string type,
-            DateTime start, DateTime end)
+        private readonly ILeaderboardResultService _leaderboardResultService;
+        public EmbedBuilderService(ILeaderboardResultService leaderboardResultService)
         {
-            var categoryResult = GetTopResultsForCategory(groupedActivitiesByParticipant, x => x.Type == type);
+            _leaderboardResultService = leaderboardResultService;
+        }
+        public Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end)
+        {
             var embedBuilder = new EmbedBuilder()
                 .WithTitle(
-                    $"'{type}' leaderboard for '{start:yyyy MMMM dd} - {end:yyyy MMMM dd}'")
+                    $"'{categoryResult.Name}' leaderboard for '{start:yyyy MMMM dd} - {end:yyyy MMMM dd}'")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
 
@@ -63,8 +62,9 @@ namespace StravaDiscordBot.Discord
             List<DetailedActivity> activities, string type, DateTime start,
             DateTime end)
         {
-            var categoryResult = GetTopResultsForCategory(
+            var categoryResult = _leaderboardResultService.GetTopResultsForCategory(
                 new Dictionary<LeaderboardParticipant, List<DetailedActivity>> {{participant, activities}},
+                type,
                 x => x.Type == type);
 
             var embedBuilder = new EmbedBuilder()
@@ -161,56 +161,6 @@ namespace StravaDiscordBot.Discord
             return embedBuilder.Build();
         }
 
-        private static CategoryResult GetTopResultsForCategory(
-            Dictionary<LeaderboardParticipant, List<DetailedActivity>> participantActivitiesDict,
-            Func<DetailedActivity, bool> activityFilter)
-        {
-            var distanceResult = new List<ParticipantResult>();
-            var altitudeResult = new List<ParticipantResult>();
-            var powerResult = new List<ParticipantResult>();
-            var singleLongestRideResult = new List<ParticipantResult>();
-
-            foreach (var (participant, participantActivities) in participantActivitiesDict)
-            {
-                var matchingActivities = participantActivities
-                    .Where(activityFilter)
-                    .ToList();
-
-                distanceResult
-                    .Add(new ParticipantResult(participant,
-                        matchingActivities.Sum(x => (x.Distance ?? 0d) / 1000))); // meters to km 
-
-                altitudeResult
-                    .Add(new ParticipantResult(participant, matchingActivities
-                        .Sum(x => (x.TotalElevationGain ?? 0d))));
-
-                powerResult
-                    .Add(new ParticipantResult(participant, matchingActivities
-                        .Where(x => (x.ElapsedTime ?? 0d) > 20 * 60)
-                        .Select(x => (x.WeightedAverageWatts ?? 0))
-                        .DefaultIfEmpty()
-                        .Max()));
-
-                singleLongestRideResult
-                    .Add(new ParticipantResult(participant, matchingActivities
-                        .Select(x => (x.Distance ?? 0d) / 1000)
-                        .DefaultIfEmpty()
-                        .Max()));
-            }
-
-            return new CategoryResult
-            {
-                ChallengeByChallengeResultDictionary = new Dictionary<string, List<ParticipantResult>>
-                {
-                    {Constants.ChallengeType.Distance, distanceResult.OrderByDescending(x => x.Value).ToList()},
-                    {Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).ToList()},
-                    {Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).ToList()},
-                    {
-                        Constants.ChallengeType.DistanceRide,
-                        singleLongestRideResult.OrderByDescending(x => x.Value).ToList()
-                    }
-                }
-            };
-        }
+        
     }
 }

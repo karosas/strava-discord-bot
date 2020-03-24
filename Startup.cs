@@ -57,6 +57,7 @@ namespace StravaDiscordBot
 
             services.AddSingleton<ICommandCoreService, CommandCoreService>();
             services.AddSingleton<IRoleService, RoleService>();
+            services.AddSingleton<ILeaderboardResultService, LeaderboardResultService>();
 
             services.AddHostedService<WeeklyLeaderboardHostedService>();
 
