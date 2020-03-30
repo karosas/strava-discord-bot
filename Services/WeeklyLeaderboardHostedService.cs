@@ -54,6 +54,7 @@ namespace StravaDiscordBot.Discord
             {
                 try
                 {
+                    _logger.LogInformation("Removing role from all users");
                     await _roleService.RemoveRoleFromAllUsersInServer(leaderboard.ServerId,
                         Constants.LeaderboardWinnerRoleName);
                 }

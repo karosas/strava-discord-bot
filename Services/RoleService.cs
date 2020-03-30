@@ -80,9 +80,10 @@ namespace StravaDiscordBot.Services
                 _logger.LogWarning($"Role '{roleName}' not found in server '{serverId}'");
                 return;
             }
-            var usersWithRole = server.Users.Where(user => user.Roles.Any(role => role.Name == roleName));
+            var usersWithRole = server.Users.Where(user => user.Roles.Any(r => r.Name == roleName));
             foreach (var userWithRole in usersWithRole)
             {
+                _logger.LogInformation($"Removing role from {userWithRole.Id}");
                 await userWithRole.RemoveRoleAsync(role);
             }
         }
