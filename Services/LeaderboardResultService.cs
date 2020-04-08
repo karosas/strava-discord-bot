@@ -60,12 +60,12 @@ namespace StravaDiscordBot.Services
                 Name = categoryName,
                 ChallengeByChallengeResultDictionary = new Dictionary<string, List<ParticipantResult>>
                 {
-                    {Constants.ChallengeType.Distance, distanceResult.OrderByDescending(x => x.Value).ToList()},
-                    {Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).ToList()},
-                    {Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).ToList()},
+                    {Constants.ChallengeType.Distance, distanceResult.OrderByDescending(x => x.Value).Take(3).ToList()},
+                    {Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).Take(3).ToList()},
+                    {Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).Take(3).ToList()},
                     {
                         Constants.ChallengeType.DistanceRide,
-                        singleLongestRideResult.OrderByDescending(x => x.Value).ToList()
+                        singleLongestRideResult.OrderByDescending(x => x.Value).Take(3).ToList()
                     }
                 }
             };

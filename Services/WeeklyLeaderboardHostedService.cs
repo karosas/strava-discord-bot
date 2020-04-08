@@ -60,8 +60,10 @@ namespace StravaDiscordBot.Discord
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"Failed to remove leaderboard role from all users in '{leaderboard.ServerId}'");
+                    _logger.LogError(e,
+                        $"Failed to remove leaderboard role from all users in '{leaderboard.ServerId}'");
                 }
+
                 var start = DateTime.Now.AddDays(-7);
                 var groupedActivitiesByParticipant = new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
                 var participants = await _participantService.GetAllParticipantsForServerAsync(leaderboard.ServerId);
@@ -90,7 +92,7 @@ namespace StravaDiscordBot.Discord
                 var virtualRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
                     groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide,
                     x => x.Type == Constants.LeaderboardRideType.VirtualRide);
-                
+
                 await channel.SendMessageAsync(embed: _embedBuilderService
                     .BuildLeaderboardEmbed(
                         virtualRideCategoryResult,
@@ -113,7 +115,8 @@ namespace StravaDiscordBot.Discord
                     }
                     catch (Exception e)
                     {
-                        _logger.LogError(e, $"Failed to grant leaderboard role for '{participantResult.Participant.DiscordUserId}'");
+                        _logger.LogError(e,
+                            $"Failed to grant leaderboard role for '{participantResult.Participant.DiscordUserId}'");
                     }
                 }
             }
