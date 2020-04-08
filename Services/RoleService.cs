@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
@@ -9,17 +10,19 @@ namespace StravaDiscordBot.Services
     {
         Task GrantUserRoleIfExists(string serverId, string userId, string roleName);
         Task RemoveUserRole(string serverId, string userId, string roleName);
-        Task RemoveRoleFromAllUsersInServer(string serverId, string roleName);
+        Task RemoveRoleFromAllParticipantsInServer(string serverId, string roleName);
     }
     public class RoleService : IRoleService
     {
         private readonly DiscordSocketClient _discordSocketClient;
         private readonly ILogger<RoleService> _logger;
+        private readonly ILeaderboardParticipantService _participantService;
 
-        public RoleService(DiscordSocketClient discordSocketClient, ILogger<RoleService> logger)
+        public RoleService(DiscordSocketClient discordSocketClient, ILogger<RoleService> logger, ILeaderboardParticipantService participantService)
         {
             _discordSocketClient = discordSocketClient;
             _logger = logger;
+            _participantService = participantService;
         }
 
         public async Task GrantUserRoleIfExists(string serverId, string userId, string roleName)
@@ -71,7 +74,7 @@ namespace StravaDiscordBot.Services
             }
         }
 
-        public async Task RemoveRoleFromAllUsersInServer(string serverId, string roleName)
+        public async Task RemoveRoleFromAllParticipantsInServer(string serverId, string roleName)
         {
             var server = _discordSocketClient.GetGuild(ulong.Parse(serverId));
             var role = server?.Roles.FirstOrDefault(x => x.Name == roleName);
@@ -80,11 +83,20 @@ namespace StravaDiscordBot.Services
                 _logger.LogWarning($"Role '{roleName}' not found in server '{serverId}'");
                 return;
             }
-            var usersWithRole = server.Users.Where(user => user.Roles.Any(r => r.Name == roleName));
-            foreach (var userWithRole in usersWithRole)
+
+            var participants = await _participantService.GetAllParticipantsForServerAsync(serverId);
+            foreach (var participant in participants)
             {
-                _logger.LogInformation($"Removing role from {userWithRole.Id}");
-                await userWithRole.RemoveRoleAsync(role);
+                _logger.LogInformation($"Removing role from {participant.DiscordUserId}");
+                try
+                {
+                    var user = server.GetUser(ulong.Parse(participant.DiscordUserId));
+                    await user.RemoveRoleAsync(role);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Failed to remove role from {participant.DiscordUserId} in server {serverId}");
+                }
             }
         }
     }
