@@ -42,13 +42,14 @@ namespace StravaDiscordBot.Services
                 return;
             }
 
-            if (user.Roles.Any(x => x.Name == roleName))
+            try
             {
-                _logger.LogInformation($"User '{userId}' already has role '{roleName}'");
-                return;
+                await user.AddRoleAsync(role);
             }
-
-            await user.AddRoleAsync(role);
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to grant role to {user?.Id}");
+            }
         }
 
         public async Task RemoveUserRole(string serverId, string userId, string roleName)
@@ -87,15 +88,15 @@ namespace StravaDiscordBot.Services
             var participants = await _participantService.GetAllParticipantsForServerAsync(serverId);
             foreach (var participant in participants)
             {
-                _logger.LogInformation($"Removing role from {participant.DiscordUserId}");
+                _logger.LogInformation($"Removing role from {participant?.DiscordUserId}");
                 try
                 {
-                    var user = server.GetUser(ulong.Parse(participant.DiscordUserId));
+                    var user = server.GetUser(ulong.Parse(participant?.DiscordUserId));
                     await user.RemoveRoleAsync(role);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"Failed to remove role from {participant.DiscordUserId} in server {serverId}");
+                    _logger.LogError(e, $"Failed to remove role from {participant?.DiscordUserId} in server {serverId}");
                 }
             }
         }
