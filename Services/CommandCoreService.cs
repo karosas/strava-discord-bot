@@ -57,10 +57,15 @@ namespace StravaDiscordBot.Discord
         {
             var participant = _context.Participants.SingleOrDefault(x =>
                 x.DiscordUserId == discordId && x.ServerId == serverId.ToString());
+
             if (participant == null)
                 return $"Participant with id {discordId} wasn't found.";
 
+            var credentials = _context.Credentials.FirstOrDefault(x => x.StravaId == participant.StravaId);
+
             _context.Participants.Remove(participant);
+            if (credentials != null)
+                _context.Credentials.Remove(credentials);
             await _context.SaveChangesAsync();
             return $"Participant with id {discordId} was removed.";
         }

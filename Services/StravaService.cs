@@ -111,7 +111,7 @@ namespace StravaDiscordBot.Services
             var athlete = await _stravaApiService.GetAthlete(exchangeResult.AccessToken);
 
             if (_dbContext.Participants.FirstOrDefault(x =>
-                x.ServerId == serverId && x.StravaId == athlete.Id.ToString(CultureInfo.InvariantCulture)) == null)
+                x.ServerId == serverId && x.DiscordUserId == discordUserId) == null)
             {
                 _dbContext.Participants.Add(new LeaderboardParticipant(serverId, discordUserId,
                     athlete.Id.ToString(CultureInfo.InvariantCulture)));
