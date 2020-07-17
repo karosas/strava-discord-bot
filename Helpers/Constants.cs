@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace StravaDiscordBot.Helpers
+﻿namespace StravaDiscordBot.Helpers
 {
     public static class Constants
     {
         public const string LeaderboardWinnerRoleName = "Strava Leaderboard";
-        public class LeaderboardRideType
+
+        public static class LeaderboardRideType
         {
             public const string RealRide = "Ride";
             public const string VirtualRide = "VirtualRide";

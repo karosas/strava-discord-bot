@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -7,7 +6,6 @@ using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Utilities;
 using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Discord;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Services;
 
@@ -16,11 +14,11 @@ namespace StravaDiscordBot.Discord.Modules
     [RequireToBeWhitelistedServer]
     public class PublicModule : ModuleBase<SocketCommandContext>
     {
-        private readonly ILogger<PublicModule> _logger;
-        private readonly CommandService _commandService;
         private readonly ICommandCoreService _commandCoreService;
-        private readonly ILeaderboardParticipantService _participantService;
+        private readonly CommandService _commandService;
         private readonly IEmbedBuilderService _embedBuilderService;
+        private readonly ILogger<PublicModule> _logger;
+        private readonly ILeaderboardParticipantService _participantService;
         private readonly IStravaService _stravaService;
 
         public PublicModule(ILogger<PublicModule> logger,

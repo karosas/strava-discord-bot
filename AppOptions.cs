@@ -15,6 +15,7 @@ namespace StravaDiscordBot
     {
         public string Token { get; set; }
     }
+
     public class StravaOptions
     {
         public string ClientId { get; set; }

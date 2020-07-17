@@ -13,7 +13,8 @@ namespace StravaDiscordBot.Discord
     {
         Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end);
 
-        Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant, List<DetailedActivity> activities,
+        Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant,
+            List<DetailedActivity> activities,
             string type, DateTime start, DateTime end);
 
         Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, AthleteDetailed athlete);
@@ -24,10 +25,12 @@ namespace StravaDiscordBot.Discord
     public class EmbedBuilderService : IEmbedBuilderService
     {
         private readonly ILeaderboardResultService _leaderboardResultService;
+
         public EmbedBuilderService(ILeaderboardResultService leaderboardResultService)
         {
             _leaderboardResultService = leaderboardResultService;
         }
+
         public Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end)
         {
             var embedBuilder = new EmbedBuilder()
@@ -78,16 +81,12 @@ namespace StravaDiscordBot.Discord
                 embedBuilder.WithDescription("Something went wrong");
                 return embedBuilder.Build();
             }
-            
+
             foreach (var (categoryName, participantResults) in categoryResult.ChallengeByChallengeResultDictionary)
-            {
-                foreach (var participantResult in participantResults)
-                {
-                    embedBuilder.AddField(categoryName,
-                        OutputFormatters.ParticipantResultForChallenge(categoryName, participantResult.Value), true);
-                }
-            }
-            
+            foreach (var participantResult in participantResults)
+                embedBuilder.AddField(categoryName,
+                    OutputFormatters.ParticipantResultForChallenge(categoryName, participantResult.Value), true);
+
             return embedBuilder.Build();
         }
 
@@ -160,7 +159,5 @@ namespace StravaDiscordBot.Discord
 
             return embedBuilder.Build();
         }
-
-        
     }
 }

@@ -22,7 +22,7 @@ namespace StravaDiscordBot.Extensions
                 // I'd rather have this silent catch-all,
                 // than exception while adding a field causing command fail to execute
             }
-           
+
             return builder;
         }
     }

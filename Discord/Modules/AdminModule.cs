@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using StravaDiscordBot.Discord.Utilities;
 using Microsoft.Extensions.Logging;
+using StravaDiscordBot.Discord.Utilities;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
@@ -18,20 +18,20 @@ namespace StravaDiscordBot.Discord.Modules
     public class AdminModule : ModuleBase<SocketCommandContext>
     {
         private readonly ICommandCoreService _commandCoreService;
-        private readonly IStravaService _stravaService;
-        private readonly ILogger<AdminModule> _logger;
         private readonly IEmbedBuilderService _embedBuilderService;
-        private readonly ILeaderboardParticipantService _participantService;
         private readonly ILeaderboardResultService _leaderboardResultService;
-        private readonly IRoleService _roleServic;
+        private readonly ILogger<AdminModule> _logger;
+        private readonly ILeaderboardParticipantService _participantService;
+        private readonly IRoleService _roleService;
+        private readonly IStravaService _stravaService;
 
         public AdminModule(ICommandCoreService commandCoreService,
             ILogger<AdminModule> logger,
             IStravaService stravaService,
             IEmbedBuilderService embedBuilderService,
-            ILeaderboardParticipantService participantService, 
-            ILeaderboardResultService leaderboardResultService, 
-            IRoleService roleServic)
+            ILeaderboardParticipantService participantService,
+            ILeaderboardResultService leaderboardResultService,
+            IRoleService roleService)
         {
             _commandCoreService = commandCoreService;
             _logger = logger;
@@ -39,7 +39,7 @@ namespace StravaDiscordBot.Discord.Modules
             _embedBuilderService = embedBuilderService;
             _participantService = participantService;
             _leaderboardResultService = leaderboardResultService;
-            _roleServic = roleServic;
+            _roleService = roleService;
         }
 
         [Command("init")]
@@ -57,6 +57,14 @@ namespace StravaDiscordBot.Discord.Modules
                         return;
                     }
 
+                     if (_context.Leaderboards.Any(x => x.ServerId == serverId.ToString()))
+                return "Seems like a leaderboard is already setup on this server";
+
+            var leaderboard = new Leaderboard {ServerId = serverId.ToString(), ChannelId = channelId.ToString()};
+            _context.Leaderboards.Add(leaderboard);
+            await _context.SaveChangesAsync();
+            return "Initialized leaderboard for this server. Users can join by using `join` command.";
+                    
                     await ReplyAsync(
                         await _commandCoreService.GenerateInitializeCommandContext(Context.Guild.Id,
                             Context.Channel.Id));
@@ -84,7 +92,6 @@ namespace StravaDiscordBot.Discord.Modules
                     var participants =
                         await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
                     foreach (var participant in participants)
-                    {
                         try
                         {
                             groupedActivitiesByParticipant.Add(participant,
@@ -95,7 +102,6 @@ namespace StravaDiscordBot.Discord.Modules
                         {
                             await AskToRelogin(participant.DiscordUserId);
                         }
-                    }
 
                     var realRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
                         groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide,
@@ -107,7 +113,7 @@ namespace StravaDiscordBot.Discord.Modules
                             DateTime.Now
                         )
                     );
-                    
+
                     var virtualRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
                         groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide,
                         x => x.Type == Constants.LeaderboardRideType.VirtualRide);
@@ -137,7 +143,8 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     _logger.LogInformation("Executing list");
                     var embeds = new List<Embed>();
-                    var participants = await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+                    var participants =
+                        await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
                     foreach (var participant in participants)
                     {
                         AthleteDetailed updatedAthleteData = null;
@@ -147,26 +154,21 @@ namespace StravaDiscordBot.Discord.Modules
                         }
                         catch (Exception e)
                         {
-                            _logger.LogError(e, $"Failed to fetch athlete while executing list command");
+                            _logger.LogError(e, "Failed to fetch athlete while executing list command");
                         }
 
                         embeds.Add(_embedBuilderService.BuildAthleteInfoEmbed(participant, updatedAthleteData));
                     }
 
                     if (!embeds.Any())
-                    {
                         embeds.Add(
                             new EmbedBuilder()
                                 .WithTitle("No participants found")
                                 .WithCurrentTimestamp()
                                 .Build()
                         );
-                    }
 
-                    foreach (var embed in embeds)
-                    {
-                        await ReplyAsync(embed: embed);
-                    }
+                    foreach (var embed in embeds) await ReplyAsync(embed: embed);
                 }
                 catch (Exception e)
                 {
@@ -199,9 +201,7 @@ namespace StravaDiscordBot.Discord.Modules
 
                     var athlete = await _stravaService.GetAthlete(participant);
                     foreach (var embed in _embedBuilderService.BuildDetailedAthleteEmbeds(participant, athlete))
-                    {
                         await ReplyAsync(embed: embed);
-                    }
                 }
                 catch (Exception e)
                 {
@@ -239,7 +239,7 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 try
                 {
-                    await _roleServic.GrantUserRoleIfExists(Context.Guild.Id.ToString(), discordId,
+                    await _roleService.GrantUserRole(Context.Guild.Id.ToString(), discordId,
                         Constants.LeaderboardWinnerRoleName);
                     await ReplyAsync("Success");
                 }
@@ -250,7 +250,7 @@ namespace StravaDiscordBot.Discord.Modules
                 }
             }
         }
-        
+
         [Command("remove-winner-role")]
         [Summary(
             "[ADMIN] Remove leaderboard winner role from discord user ID (for testing purposes). Usage: `@mention remove-winner-role 1234`")]
@@ -261,7 +261,7 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 try
                 {
-                    await _roleServic.RemoveUserRole(Context.Guild.Id.ToString(), discordId,
+                    await _roleService.RemoveUserRole(Context.Guild.Id.ToString(), discordId,
                         Constants.LeaderboardWinnerRoleName);
                     await ReplyAsync("Success");
                 }
@@ -280,7 +280,7 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 var user = Context.Client.GetUser(ulong.Parse(discordId));
                 await user.SendMessageAsync(
-                    $"Hey, I failed refreshing access to your Strava account. Please use `join` command again in the server of leaderboard.");
+                    "Hey, I failed refreshing access to your Strava account. Please use `join` command again in the server of leaderboard.");
             }
             catch (Exception e)
             {

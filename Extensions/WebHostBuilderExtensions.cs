@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Runtime.InteropServices.ComTypes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.Elasticsearch;
 using Serilog.Sinks.Humio;
 
 namespace StravaDiscordBot.Extensions
@@ -26,17 +22,15 @@ namespace StravaDiscordBot.Extensions
                     builderContext.Configuration.Bind(options);
 
                     if (options.Humio != null && !string.IsNullOrEmpty(options.Humio.Token))
-                    {
                         loggerConfig.WriteTo.HumioSink(new HumioSinkConfiguration
                         {
                             BatchSizeLimit = 50,
                             Period = TimeSpan.FromMilliseconds(1000),
                             IngestToken = options.Humio.Token
                         });
-                    }
 
                     loggerConfig.WriteTo.Console();
-                }); 
+                });
         }
     }
 }

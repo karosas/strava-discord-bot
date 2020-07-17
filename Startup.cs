@@ -1,4 +1,3 @@
-using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -11,26 +10,27 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Serilog;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Discord.Modules;
 using StravaDiscordBot.Services;
+using StravaDiscordBot.Services.HostedService;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot
 {
     public class Startup
     {
-        private IConfiguration Configuration { get; set; }
-        private DiscordSocketClient DiscordClient { get; set; }
-        private CommandHandlingService CommandHandlingService { get; set; }
         private ILogger<Startup> _logger;
 
-        public Startup(IConfiguration configuration, IWebHostEnvironment env)
+        public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
+
+        private IConfiguration Configuration { get; }
+        private DiscordSocketClient DiscordClient { get; set; }
+        private CommandHandlingService CommandHandlingService { get; set; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -50,7 +50,6 @@ namespace StravaDiscordBot
             services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
             services.AddSingleton<IStravaApiClientService, StravaApiClientService>();
             services.AddSingleton<IStravaService, StravaService>();
-            services.AddSingleton<ILeaderboardService, LeaderboardService>();
             services.AddSingleton<ILeaderboardParticipantService, LeaderboardParticipantService>();
 
             services.AddSingleton<IEmbedBuilderService, EmbedBuilderService>();
@@ -68,10 +67,7 @@ namespace StravaDiscordBot
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
             app.UseRouting();
 

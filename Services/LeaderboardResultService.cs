@@ -14,7 +14,7 @@ namespace StravaDiscordBot.Services
             string categoryName,
             Func<DetailedActivity, bool> activityFilter);
     }
-    
+
     public class LeaderboardResultService : ILeaderboardResultService
     {
         public CategoryResult GetTopResultsForCategory(
@@ -39,12 +39,12 @@ namespace StravaDiscordBot.Services
 
                 altitudeResult
                     .Add(new ParticipantResult(participant, matchingActivities
-                        .Sum(x => (x.TotalElevationGain ?? 0d))));
+                        .Sum(x => x.TotalElevationGain ?? 0d)));
 
                 powerResult
                     .Add(new ParticipantResult(participant, matchingActivities
                         .Where(x => (x.ElapsedTime ?? 0d) > 20 * 60)
-                        .Select(x => (x.WeightedAverageWatts ?? 0))
+                        .Select(x => x.WeightedAverageWatts ?? 0)
                         .DefaultIfEmpty()
                         .Max()));
 
@@ -61,7 +61,10 @@ namespace StravaDiscordBot.Services
                 ChallengeByChallengeResultDictionary = new Dictionary<string, List<ParticipantResult>>
                 {
                     {Constants.ChallengeType.Distance, distanceResult.OrderByDescending(x => x.Value).Take(3).ToList()},
-                    {Constants.ChallengeType.Elevation, altitudeResult.OrderByDescending(x => x.Value).Take(3).ToList()},
+                    {
+                        Constants.ChallengeType.Elevation,
+                        altitudeResult.OrderByDescending(x => x.Value).Take(3).ToList()
+                    },
                     {Constants.ChallengeType.Power, powerResult.OrderByDescending(x => x.Value).Take(3).ToList()},
                     {
                         Constants.ChallengeType.DistanceRide,

@@ -8,24 +8,26 @@ namespace StravaDiscordBot.Services
 {
     public interface IRoleService
     {
-        Task GrantUserRoleIfExists(string serverId, string userId, string roleName);
+        Task GrantUserRole(string serverId, string userId, string roleName);
         Task RemoveUserRole(string serverId, string userId, string roleName);
-        Task RemoveRoleFromAllParticipantsInServer(string serverId, string roleName);
+        Task RemoveRoleFromAllInServer(string serverId, string roleName);
     }
+
     public class RoleService : IRoleService
     {
         private readonly DiscordSocketClient _discordSocketClient;
         private readonly ILogger<RoleService> _logger;
         private readonly ILeaderboardParticipantService _participantService;
 
-        public RoleService(DiscordSocketClient discordSocketClient, ILogger<RoleService> logger, ILeaderboardParticipantService participantService)
+        public RoleService(DiscordSocketClient discordSocketClient, ILogger<RoleService> logger,
+            ILeaderboardParticipantService participantService)
         {
             _discordSocketClient = discordSocketClient;
             _logger = logger;
             _participantService = participantService;
         }
 
-        public async Task GrantUserRoleIfExists(string serverId, string userId, string roleName)
+        public async Task GrantUserRole(string serverId, string userId, string roleName)
         {
             _logger.LogInformation($"Attempting to grant user '{userId}' role '{roleName}' in server '{serverId}'");
             var server = _discordSocketClient.GetGuild(ulong.Parse(serverId));
@@ -35,6 +37,7 @@ namespace StravaDiscordBot.Services
                 _logger.LogWarning($"Role '{roleName}' not found in server '{serverId}'");
                 return;
             }
+
             var user = server.GetUser(ulong.Parse(userId));
             if (user == null)
             {
@@ -62,6 +65,7 @@ namespace StravaDiscordBot.Services
                 _logger.LogWarning($"Role '{roleName}' not found in server '{serverId}'");
                 return;
             }
+
             var user = server.GetUser(ulong.Parse(userId));
             if (user == null)
             {
@@ -69,13 +73,10 @@ namespace StravaDiscordBot.Services
                 return;
             }
 
-            if (user.Roles.Any(x => x.Name == roleName))
-            {
-                await user.RemoveRoleAsync(role);
-            }
+            if (user.Roles.Any(x => x.Name == roleName)) await user.RemoveRoleAsync(role);
         }
 
-        public async Task RemoveRoleFromAllParticipantsInServer(string serverId, string roleName)
+        public async Task RemoveRoleFromAllInServer(string serverId, string roleName)
         {
             var server = _discordSocketClient.GetGuild(ulong.Parse(serverId));
             var role = server?.Roles.FirstOrDefault(x => x.Name == roleName);
@@ -96,7 +97,8 @@ namespace StravaDiscordBot.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"Failed to remove role from {participant?.DiscordUserId} in server {serverId}");
+                    _logger.LogError(e,
+                        $"Failed to remove role from {participant?.DiscordUserId} in server {serverId}");
                 }
             }
         }

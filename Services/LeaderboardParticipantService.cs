@@ -16,8 +16,8 @@ namespace StravaDiscordBot.Services
 
     public class LeaderboardParticipantService : ILeaderboardParticipantService
     {
-        private readonly ILogger<LeaderboardParticipantService> _logger;
         private readonly BotDbContext _dbContext;
+        private readonly ILogger<LeaderboardParticipantService> _logger;
 
         public LeaderboardParticipantService(ILogger<LeaderboardParticipantService> logger, BotDbContext dbContext)
         {
@@ -32,7 +32,7 @@ namespace StravaDiscordBot.Services
                 .Participants
                 .ToListAsync()
                 .ConfigureAwait(false);
-            
+
             return participants
                 .Where(x => x.ServerId == serverId)
                 .ToList();
