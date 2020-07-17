@@ -29,13 +29,23 @@ namespace StravaDiscordBot.Discord
 
         public async Task<string> GenerateInitializeCommandContext(ulong serverId, ulong channelId)
         {
+<<<<<<< HEAD
            
+=======
+            if (_context.Leaderboards.Any(x => x.ServerId == serverId.ToString()))
+                return "Seems like a leaderboard is already setup on this server";
+
+            var leaderboard = new Leaderboard {ServerId = serverId.ToString(), ChannelId = channelId.ToString()};
+            _context.Leaderboards.Add(leaderboard);
+            await _context.SaveChangesAsync();
+            return "Initialized leaderboard for this server. Users can join by using the `join` command.";
+>>>>>>> d8e49f1f0c5f579179b051b1e3e76e47ad6a7ab1
         }
 
         public string GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
             return
-                $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
+                $"Hey, {username} ! Please go to the following url to authorize me to view your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
         }
 
         public async Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId)

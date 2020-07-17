@@ -280,7 +280,7 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 var user = Context.Client.GetUser(ulong.Parse(discordId));
                 await user.SendMessageAsync(
-                    "Hey, I failed refreshing access to your Strava account. Please use `join` command again in the server of leaderboard.");
+                    $"Hey, I failed to refresh access to your Strava account. Please use the `join` command again in the server of your leaderboard.");
             }
             catch (Exception e)
             {
