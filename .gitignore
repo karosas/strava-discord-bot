@@ -40,3 +40,4 @@ Properties/PublishProfiles/
 publish.ps1
 leaderboard.db
 *.db
+*.pubxml
