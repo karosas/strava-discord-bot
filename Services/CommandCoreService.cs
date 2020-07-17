@@ -44,13 +44,13 @@ namespace StravaDiscordBot.Discord
             var leaderboard = new Leaderboard {ServerId = serverId.ToString(), ChannelId = channelId.ToString()};
             _context.Leaderboards.Add(leaderboard);
             await _context.SaveChangesAsync();
-            return "Initialized leaderboard for this server. Users can join by using `join` command.";
+            return "Initialized leaderboard for this server. Users can join by using the `join` command.";
         }
 
         public string GenerateJoinCommandContent(ulong serverId, ulong userId, string username)
         {
             return
-                $"Hey, {username} ! Please go to this url to allow me check out your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
+                $"Hey, {username} ! Please go to the following url to authorize me to view your Strava activities: {_stravaService.GetOAuthUrl(serverId.ToString(), userId.ToString())}";
         }
 
         public async Task<string> GenerateRemoveParticipantContent(string discordId, ulong serverId)
