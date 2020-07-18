@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
+using IO.Swagger.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Controllers
@@ -12,12 +15,22 @@ namespace StravaDiscordBot.Controllers
     public class StravaController : ControllerBase
     {
         private readonly ILogger<StravaController> _logger;
-        private readonly IStravaService _stravaService;
+        private readonly IStravaAuthenticationService _stravaAuthenticationService;
+        private readonly IAthleteService _athleteSrvice;
+        private readonly ILeaderboardParticipantService _leaderboardParticipantService;
+        private readonly IStravaCredentialService _credentialService;
 
-        public StravaController(ILogger<StravaController> logger, IStravaService stravaService)
+        public StravaController(ILogger<StravaController> logger,
+            IStravaAuthenticationService stravaAuthenticationService,
+            IAthleteService athleteSrvice,
+            ILeaderboardParticipantService leaderboardParticipantService,
+            IStravaCredentialService credentialService)
         {
             _logger = logger;
-            _stravaService = stravaService;
+            _stravaAuthenticationService = stravaAuthenticationService;
+            _athleteSrvice = athleteSrvice;
+            _leaderboardParticipantService = leaderboardParticipantService;
+            _credentialService = credentialService;
         }
 
         [HttpGet("callback/{serverId}/{discordUserId}")]
@@ -32,16 +45,22 @@ namespace StravaDiscordBot.Controllers
 
             try
             {
-                await _stravaService.ExchangeCodeAndCreateOrRefreshParticipant(serverId, discordUserId, code)
-                    .ConfigureAwait(false);
+                var exchangeResult = await _stravaAuthenticationService.ExchangeCodeAsync(code);
+                var athlete = await _athleteSrvice.Get(null, exchangeResult.AccessToken);
+                var participant = _leaderboardParticipantService.GetParticipantOrDefault(serverId, discordUserId);
+
+                if (participant == null)
+                    await _leaderboardParticipantService.CreateWithCredentials(new LeaderboardParticipant(serverId, discordUserId, athlete.Id.ToString()), exchangeResult);
+
+                await _credentialService.UpsertTokens(athlete.Id.ToString(), exchangeResult);
                 return Ok("You are now part of the leaderboard");
             }
-            catch (StravaException e)
+            catch (ApiException e)
             {
                 _logger.LogError(e, "Failed to authorize with strava");
                 return Ok($"Failed to authorize with Strava, error message: {e.Message}");
             }
-            catch (InvalidCommandArgumentException e)
+            catch (Exception e)
             {
                 _logger.LogError(e, "Failed to create user with unknown error");
                 return Ok(e.Message);

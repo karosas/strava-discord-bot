@@ -4,10 +4,8 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Utilities;
-using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
-using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord.Modules
@@ -15,28 +13,55 @@ namespace StravaDiscordBot.Discord.Modules
     public class LeaderboardModule : ModuleBase<SocketCommandContext>
     {
         private readonly IEmbedBuilderService _embedBuilderService;
-        private readonly ILeaderboardResultService _leaderboardResultService;
+        private readonly IStravaAuthenticationService _stravaAuthenticationService;
+        private readonly IActivitiesService _activitiesService;
+        private readonly ILeaderboardService _leaderboardService;
+        private readonly ILeaderboardService _leaderboardResultService;
         private readonly ILogger<LeaderboardModule> _logger;
         private readonly ILeaderboardParticipantService _participantService;
-        private readonly IStravaService _stravaService;
 
         public LeaderboardModule(ILogger<LeaderboardModule> logger,
             ILeaderboardParticipantService participantService,
-            IStravaService stravaService,
-            ILeaderboardResultService leaderboardResultService,
-            IEmbedBuilderService embedBuilderService)
+            ILeaderboardService leaderboardResultService,
+            IEmbedBuilderService embedBuilderService,
+            IStravaAuthenticationService stravaAuthenticationService,
+            IActivitiesService activitiesService,
+            ILeaderboardService leaderboardService)
         {
             _logger = logger;
             _participantService = participantService;
-            _stravaService = stravaService;
             _leaderboardResultService = leaderboardResultService;
             _embedBuilderService = embedBuilderService;
+            _stravaAuthenticationService = stravaAuthenticationService;
+            _activitiesService = activitiesService;
+            _leaderboardService = leaderboardService;
+        }
+
+        [Command("join")]
+        [Summary("Join leaderboard")]
+        public async Task JoinLeaderboard()
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    var text = $"Hey, {Context.User.Mention} ! Please go to the following url to authorize me to view your Strava activities: {_stravaAuthenticationService.GetOAuthUrl(Context.Guild.Id.ToString(), Context.User.Id.ToString())}";
+
+                    var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
+                    await dmChannel.SendMessageAsync(text);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Join failed for {Context.User.Id}");
+                }
+            }
         }
 
 
         [Command("leaderboard")]
         [Summary("[ADMIN] Manually triggers leaderboard in channel written")]
         [RequireToBeWhitelistedServer]
+        [RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task ShowLeaderboard()
         {
             using (Context.Channel.EnterTypingState())
@@ -45,43 +70,38 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     _logger.LogInformation("Executing leaderboard command");
                     var start = DateTime.Now.AddDays(-7);
-                    var groupedActivitiesByParticipant =
-                        new Dictionary<LeaderboardParticipant, List<DetailedActivity>>();
-                    var participants =
-                        await _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+                    var participantsWithActivities = new List<ParticipantWithActivities>();
+                    var participants = _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+
                     foreach (var participant in participants)
-                        try
-                        {
-                            groupedActivitiesByParticipant.Add(participant,
-                                await _stravaService.FetchActivitiesForParticipant(participant,
-                                    start));
-                        }
-                        catch (StravaException e) when (e.Error == StravaException.StravaErrorType.RefreshFailed)
-                        {
-                            await AskToRelogin(participant.DiscordUserId);
-                        }
+                    {
+                        var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
 
-                    var realRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
-                        groupedActivitiesByParticipant, Constants.LeaderboardRideType.RealRide,
-                        x => x.Type == Constants.LeaderboardRideType.RealRide);
+                        var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
+                        participantsWithActivities.Add(new ParticipantWithActivities
+                        {
+                            Participant = participant,
+                            Activities = activities
+                        });
+                    }
+
+                    var realRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new RealRideCategory());
                     await ReplyAsync(embed: _embedBuilderService
                         .BuildLeaderboardEmbed(
-                            realRideCategoryResult,
+                            realRideResult,
                             start,
                             DateTime.Now
                         )
                     );
 
-                    var virtualRideCategoryResult = _leaderboardResultService.GetTopResultsForCategory(
-                        groupedActivitiesByParticipant, Constants.LeaderboardRideType.VirtualRide,
-                        x => x.Type == Constants.LeaderboardRideType.VirtualRide);
+                    var virtualRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new VirtualRideCategory());
                     await ReplyAsync(embed: _embedBuilderService
-                        .BuildLeaderboardEmbed(
-                            virtualRideCategoryResult,
-                            start,
-                            DateTime.Now
-                        )
-                    );
+                       .BuildLeaderboardEmbed(
+                           virtualRideResult,
+                           start,
+                           DateTime.Now
+                       )
+                   );
                 }
                 catch (Exception e)
                 {

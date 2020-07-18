@@ -21,12 +21,12 @@
         {
             switch (challenge)
             {
-                case Constants.ChallengeType.Distance:
-                case Constants.ChallengeType.DistanceRide:
+                case Constants.SubCategoryTypes.Distance:
+                case Constants.SubCategoryTypes.DistanceRide:
                     return $"{value:n1} km";
-                case Constants.ChallengeType.Elevation:
+                case Constants.SubCategoryTypes.Elevation:
                     return $"{value:n0} m";
-                case Constants.ChallengeType.Power:
+                case Constants.SubCategoryTypes.Power:
                     return $"{value:n0} W";
                 default:
                     return $"{value:n1}";

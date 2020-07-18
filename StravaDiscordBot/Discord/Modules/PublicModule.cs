@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Utilities;
 using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Helpers;
+using StravaDiscordBot.Models;
+using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord.Modules
@@ -14,26 +16,26 @@ namespace StravaDiscordBot.Discord.Modules
     [RequireToBeWhitelistedServer]
     public class PublicModule : ModuleBase<SocketCommandContext>
     {
-        private readonly ICommandCoreService _commandCoreService;
         private readonly CommandService _commandService;
         private readonly IEmbedBuilderService _embedBuilderService;
         private readonly ILogger<PublicModule> _logger;
         private readonly ILeaderboardParticipantService _participantService;
-        private readonly IStravaService _stravaService;
+        private readonly IStravaAuthenticationService _stravaAuthenticationService;
+        private readonly IActivitiesService _activityService;
 
         public PublicModule(ILogger<PublicModule> logger,
             CommandService commandService,
-            ICommandCoreService commandCoreService,
             ILeaderboardParticipantService participantService,
             IEmbedBuilderService embedBuilderService,
-            IStravaService stravaService)
+            IStravaAuthenticationService stravaAuthenticationService,
+            IActivitiesService activityService)
         {
             _logger = logger;
             _commandService = commandService;
-            _commandCoreService = commandCoreService;
             _participantService = participantService;
             _embedBuilderService = embedBuilderService;
-            _stravaService = stravaService;
+            _stravaAuthenticationService = stravaAuthenticationService;
+            _activityService = activityService;
         }
 
         [Command("help")]
@@ -62,25 +64,6 @@ namespace StravaDiscordBot.Discord.Modules
             }
         }
 
-        [Command("join")]
-        [Summary("Join leaderboard")]
-        public async Task JoinLeaderboard()
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                try
-                {
-                    var responseText = _commandCoreService.GenerateJoinCommandContent(Context.Guild.Id, Context.User.Id,
-                        Context.User.Mention);
-                    var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
-                    await dmChannel.SendMessageAsync(responseText);
-                }
-                catch (InvalidCommandArgumentException e)
-                {
-                    await ReplyAsync(e.Message);
-                }
-            }
-        }
 
         [Command("stats")]
         [Summary("Show your weekly stats")]
@@ -90,20 +73,25 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 try
                 {
-                    var participant =
-                        await _participantService
-                            .GetParticipantOrDefault(Context.Guild.Id.ToString(), Context.User.Id.ToString());
+                    var participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), Context.User.Id.ToString());
                     if (participant == null)
                         await ReplyAsync("It seems like you're not part of the leaderboard. Try joining it.");
 
                     var start = DateTime.Now.AddDays(-7);
-                    var activities = await _stravaService.FetchActivitiesForParticipant(participant, start);
 
-                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participant,
-                        activities, Constants.LeaderboardRideType.RealRide, start, DateTime.Now));
 
-                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participant,
-                        activities, Constants.LeaderboardRideType.VirtualRide, start, DateTime.Now));
+                    var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
+                    var activities = await policy.ExecuteAsync(x => _activityService.GetForStravaUser(participant.StravaId, start), context);
+
+                    var participantWithActivities = new ParticipantWithActivities { Participant = participant, Activities = activities };
+
+                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participantWithActivities,
+                        new RealRideCategory(), 
+                        $"'{new RealRideCategory().Name}' leaderboard for '{start:yyyy MMMM dd} - {DateTime.Now:yyyy MMMM dd}'"));
+
+                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participantWithActivities, 
+                        new VirtualRideCategory(),
+                        $"'{new VirtualRideCategory().Name}' leaderboard for '{start:yyyy MMMM dd} - {DateTime.Now:yyyy MMMM dd}'"));
                 }
                 catch (Exception e)
                 {

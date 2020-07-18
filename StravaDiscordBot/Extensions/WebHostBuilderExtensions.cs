@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
-using Serilog.Sinks.Humio;
+using Serilog.Events;
+using Serilog.Sinks.Elasticsearch;
 
 namespace StravaDiscordBot.Extensions
 {
@@ -22,14 +23,23 @@ namespace StravaDiscordBot.Extensions
                     builderContext.Configuration.Bind(options);
 
                     if (options.Humio != null && !string.IsNullOrEmpty(options.Humio.Token))
-                        loggerConfig.WriteTo.HumioSink(new HumioSinkConfiguration
+                    {
+                        loggerConfig.WriteTo.Logger(lc =>
                         {
-                            BatchSizeLimit = 50,
-                            Period = TimeSpan.FromMilliseconds(1000),
-                            IngestToken = options.Humio.Token
-                        });
+                            lc.MinimumLevel.Information();
+                            lc.MinimumLevel.Override("System", LogEventLevel.Information);
+                            lc.MinimumLevel.Override("Microsoft", LogEventLevel.Information);
 
-                    loggerConfig.WriteTo.Console();
+                            lc.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("https://cloud.humio.com:443/api/v1/dataspaces/sandbox/ingest/elasticsearch"))
+                            {
+                                MinimumLogEventLevel = LogEventLevel.Information,
+                                ModifyConnectionSettings = c => c.BasicAuthentication(options.Humio.Token, ""),
+                                Period = TimeSpan.FromMilliseconds(500)
+                            });
+                        });
+                    }
+                    if(options.LogToConsole)
+                        loggerConfig.WriteTo.Console();
                 });
         }
     }

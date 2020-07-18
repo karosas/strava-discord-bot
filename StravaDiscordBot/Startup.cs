@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using IO.Swagger.Api;
+using IO.Swagger.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -44,21 +46,45 @@ namespace StravaDiscordBot
             services.AddSingleton<CommandHandlingService>();
             services.AddSingleton<HttpClient>();
 
+            // Discord modules
+
             services.AddSingleton<PublicModule>();
             services.AddSingleton<AdminModule>();
+            services.AddSingleton<AthleteModule>();
+            services.AddSingleton<LeaderboardModule>();
 
-            services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
-            services.AddSingleton<IStravaApiClientService, StravaApiClientService>();
-            services.AddSingleton<IStravaService, StravaService>();
-            services.AddSingleton<ILeaderboardParticipantService, LeaderboardParticipantService>();
+            // Discord wrapper services
 
+            services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IEmbedBuilderService, EmbedBuilderService>();
 
-            services.AddSingleton<ICommandCoreService, CommandCoreService>();
-            services.AddSingleton<IRoleService, RoleService>();
-            services.AddSingleton<ILeaderboardResultService, LeaderboardResultService>();
+            // Storage
+
+            services.AddDbContext<BotDbContext>(ServiceLifetime.Singleton);
+
+            // Storage wrapper services
+
+            services.AddSingleton<ILeaderboardParticipantService, LeaderboardParticipantService>();
+            services.AddSingleton<ILeaderboardService, LeaderboardService>();
+            services.AddSingleton<IStravaCredentialService, StravaCredentialService>();
+
+            // Strava API CLient
+
+            services.AddSingleton(typeof(Configuration), new Configuration());
+            services.AddSingleton<IActivitiesApi, ActivitiesApi>();
+            services.AddSingleton<IAthletesApi, AthletesApi>();
+
+            // Strava wrapper services
+
+            services.AddSingleton<IStravaAuthenticationService, StravaAuthenticationService>();
+            services.AddSingleton<IActivitiesService, ActivitiesService>();
+            services.AddSingleton<IAthleteService, AthleteService>();
+
+            // Hosted services
 
             services.AddHostedService<WeeklyLeaderboardHostedService>();
+
+            // API
 
             services.AddControllers();
             services.AddMvc();

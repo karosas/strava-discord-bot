@@ -26,6 +26,8 @@ namespace StravaDiscordBot.Discord
 
             await _commands.AddModuleAsync<PublicModule>(_services);
             await _commands.AddModuleAsync<AdminModule>(_services);
+            await _commands.AddModuleAsync<AthleteModule>(_services);
+            await _commands.AddModuleAsync<LeaderboardModule>(_services);
         }
 
         private async Task HandleCommandAsync(SocketMessage messageParam)

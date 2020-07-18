@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Discord;
+using IO.Swagger.Model;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
-using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord
@@ -12,21 +13,17 @@ namespace StravaDiscordBot.Discord
     public interface IEmbedBuilderService
     {
         Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end);
-
-        Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant,
-            List<DetailedActivity> activities,
-            string type, DateTime start, DateTime end);
-
-        Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, AthleteDetailed athlete);
-        List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, AthleteDetailed athlete);
+        Embed BuildParticipantStatsForCategoryEmbed(ParticipantWithActivities participantWithActivities, ICategory category, string title);
+        Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, DetailedAthlete athlete);
+        List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, DetailedAthlete athlete);
         Embed BuildSimpleEmbed(string title, string description);
     }
 
     public class EmbedBuilderService : IEmbedBuilderService
     {
-        private readonly ILeaderboardResultService _leaderboardResultService;
+        private readonly ILeaderboardService _leaderboardResultService;
 
-        public EmbedBuilderService(ILeaderboardResultService leaderboardResultService)
+        public EmbedBuilderService(ILeaderboardService leaderboardResultService)
         {
             _leaderboardResultService = leaderboardResultService;
         }
@@ -40,58 +37,55 @@ namespace StravaDiscordBot.Discord
                 .WithColor(Color.Green);
 
 
-            foreach (var (participant, participantResults) in categoryResult.ChallengeByChallengeResultDictionary)
+            foreach (var subCategoryResult in categoryResult.SubCategoryResults)
             {
                 embedBuilder.AddField(efb => efb.WithName("Category")
-                    .WithValue($"{participant}")
-                    .WithIsInline(false));
+                .WithValue(subCategoryResult.Name)
+                .WithIsInline(false));
+
                 var place = 1;
-                foreach (var participantResult in participantResults)
+                foreach (var participantResult in subCategoryResult.OrderedParticipantResults)
                 {
                     embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
                         .WithName(
-                            $"{OutputFormatters.PlaceToEmote(place)} - {OutputFormatters.ParticipantResultForChallenge(participant, participantResult.Value)}")
+                            $"{OutputFormatters.PlaceToEmote(place)} - {participantResult.DisplayValue}")
                         .WithIsInline(true));
                     place++;
                     if (place > 3)
                         break;
                 }
+
             }
 
             return embedBuilder.Build();
         }
 
-        public Embed BuildParticipantStatsForCategoryEmbed(LeaderboardParticipant participant,
-            List<DetailedActivity> activities, string type, DateTime start,
-            DateTime end)
+        public Embed BuildParticipantStatsForCategoryEmbed(ParticipantWithActivities participantWithActivities, ICategory category, string title)
         {
             var categoryResult = _leaderboardResultService.GetTopResultsForCategory(
-                new Dictionary<LeaderboardParticipant, List<DetailedActivity>> {{participant, activities}},
-                type,
-                x => x.Type == type);
+                new List<ParticipantWithActivities> { participantWithActivities },
+                category);
 
             var embedBuilder = new EmbedBuilder()
-                .WithTitle(
-                    $"'{type}' stats for '{start:yyyy MMMM dd} - {end:yyyy MMMM dd}'")
+                .WithTitle(title)
                 .WithCurrentTimestamp()
                 .WithColor(Color.Gold);
 
-            if (!categoryResult.ChallengeByChallengeResultDictionary.Any())
+            if (!categoryResult.SubCategoryResults.Any())
             {
                 embedBuilder.WithDescription("Something went wrong");
                 return embedBuilder.Build();
             }
 
-            foreach (var (categoryName, participantResults) in categoryResult.ChallengeByChallengeResultDictionary)
-            foreach (var participantResult in participantResults)
-                embedBuilder.AddField(categoryName,
-                    OutputFormatters.ParticipantResultForChallenge(categoryName, participantResult.Value), true);
+            foreach (var subCategory in categoryResult.SubCategoryResults)
+                foreach (var participantResult in subCategory.OrderedParticipantResults)
+                    embedBuilder.AddField(subCategory.Name, participantResult.DisplayValue, true);
 
             return embedBuilder.Build();
         }
 
         public List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant,
-            AthleteDetailed athlete)
+            DetailedAthlete athlete)
         {
             var results = new List<Embed>();
 
@@ -110,10 +104,12 @@ namespace StravaDiscordBot.Discord
             var embedFieldsAdded = 0;
             foreach (var propertyInfo in athlete.GetType().GetProperties())
             {
-                if (string.IsNullOrEmpty(propertyInfo.Name)) continue;
+                if (string.IsNullOrEmpty(propertyInfo.Name))
+                    continue;
 
                 var value = propertyInfo.GetValue(athlete)?.ToString();
-                if (string.IsNullOrEmpty(value)) continue;
+                if (string.IsNullOrEmpty(value))
+                    continue;
 
                 embedBuilder
                     .AddField(efb => efb.WithName(propertyInfo.Name ?? "N/A")
@@ -144,7 +140,7 @@ namespace StravaDiscordBot.Discord
                 .Build();
         }
 
-        public Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, AthleteDetailed athlete)
+        public Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, DetailedAthlete athlete)
         {
             var embedBuilder = new EmbedBuilder()
                 .WithCurrentTimestamp()

@@ -5,12 +5,12 @@
     <UserSecretsId>strava-discord-bot-13mdf4j3-23jnejkn</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.7.0" />
-    <PackageReference Include="Discord.Net" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.4" />
+    <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="3.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="3.1.0" />
@@ -19,11 +19,11 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
+    <PackageReference Include="Polly" Version="7.2.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.1" />
+    <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.2.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-    <PackageReference Include="Serilog.Sinks.Humio" Version="1.0.12" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,5 +31,9 @@
     <None Remove="docker-compose.production.yml" />
     <None Remove="development.Dockerfile" />
     <None Remove="production.Dockerfile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StravaDiscordBot.Strava\StravaDiscordBot.Strava.csproj" />
   </ItemGroup>
 </Project>

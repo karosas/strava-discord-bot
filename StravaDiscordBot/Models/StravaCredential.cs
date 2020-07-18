@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using StravaDiscordBot.Models.Strava;
+using StravaDiscordBot.Strava;
 
 namespace StravaDiscordBot.Models
 {

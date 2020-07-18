@@ -4,11 +4,12 @@ namespace StravaDiscordBot
 {
     public class AppOptions
     {
-        public string ConnectionString { get; set; }
+        public string ConnectionString { get; set; } = "Data Source=leaderboard.db;";
         public DiscordOptions Discord { get; set; }
         public StravaOptions Strava { get; set; }
         public string BaseUrl { get; set; }
         public HumioOptions Humio { get; set; }
+        public bool LogToConsole { get; set; }
     }
 
     public class DiscordOptions

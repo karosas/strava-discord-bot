@@ -4,13 +4,13 @@
     {
         public const string LeaderboardWinnerRoleName = "Strava Leaderboard";
 
-        public static class LeaderboardRideType
+        public static class CategoryTypes
         {
             public const string RealRide = "Ride";
             public const string VirtualRide = "VirtualRide";
         }
 
-        public static class ChallengeType
+        public static class SubCategoryTypes
         {
             public const string Distance = "Distance";
             public const string Elevation = "Elevation";
