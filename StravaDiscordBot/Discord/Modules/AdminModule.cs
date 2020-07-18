@@ -83,57 +83,6 @@ namespace StravaDiscordBot.Discord.Modules
             }
         }
 
-        [Command("leaderboard")]
-        [Summary("[ADMIN] Manually triggers leaderboard in channel written")]
-        [RequireToBeWhitelistedServer]
-        public async Task ShowLeaderboard()
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                try
-                {
-                    _logger.LogInformation("Executing leaderboard command");
-                    var start = DateTime.Now.AddDays(-7);
-                    var participantsWithActivities = new List<ParticipantWithActivities>();
-                    var participants = _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
-
-                    foreach(var participant in participants)
-                    {
-                        var (policy,context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
-
-                        var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
-                        participantsWithActivities.Add(new ParticipantWithActivities
-                        {
-                            Participant = participant,
-                            Activities = activities
-                        });
-                    }
-
-                    var realRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new RealRideCategory());
-                    await ReplyAsync(embed: _embedBuilderService
-                        .BuildLeaderboardEmbed(
-                            realRideResult,
-                            start,
-                            DateTime.Now
-                        )
-                    );
-
-                    var virtualRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new VirtualRideCategory());
-                    await ReplyAsync(embed: _embedBuilderService
-                       .BuildLeaderboardEmbed(
-                           virtualRideResult,
-                           start,
-                           DateTime.Now
-                       )
-                   );
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "leaderboard failed");
-                }
-            }
-        }
-
         [Command("remove")]
         [Summary("[ADMIN] Remove user from leaderboard by discord user ID. Usage: `@mention remove 1234`")]
         [RequireToBeWhitelistedServer]
@@ -206,21 +155,6 @@ namespace StravaDiscordBot.Discord.Modules
                     _logger.LogError(e, $"Failed to remove role for user {discordId}");
                     await ReplyAsync($"Failed - {e.Message}");
                 }
-            }
-        }
-
-        private async Task AskToRelogin(string discordId)
-        {
-            _logger.LogInformation($"Sending refresh notification to {discordId}");
-            try
-            {
-                var user = Context.Client.GetUser(ulong.Parse(discordId));
-                await user.SendMessageAsync(
-                    $"Hey, I failed to refresh access to your Strava account. Please use the `join` command again in the server of your leaderboard.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to deliver relogin message");
             }
         }
     }
