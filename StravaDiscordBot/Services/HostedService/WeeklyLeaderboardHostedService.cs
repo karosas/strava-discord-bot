@@ -136,6 +136,7 @@ namespace StravaDiscordBot.Services.HostedService
             }
         }
 
+        //TODO: Refactor to be reused in here and leaderboard module
         private async Task GrantWinnerRoles(Leaderboard leaderboard, List<ParticipantResult> leaderboardResults)
         {
             foreach (var participantResult in leaderboardResults)

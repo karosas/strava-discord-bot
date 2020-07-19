@@ -17,18 +17,21 @@ namespace StravaDiscordBot.Discord.Modules
         private readonly IStravaAuthenticationService _stravaAuthenticationService;
         private readonly IEmbedBuilderService _embedBuilderService;
         private readonly IAthleteService _athleteService;
+        private readonly IStravaCredentialService _stravaCredentialService;
 
         public AthleteModule(ILogger<AthleteModule> logger,
             ILeaderboardParticipantService participantService,
             IStravaAuthenticationService stravaAuthenticationService,
             IEmbedBuilderService embedBuilderService,
-            IAthleteService athleteService)
+            IAthleteService athleteService,
+            IStravaCredentialService stravaCredentialService)
         {
             _logger = logger;
             _participantService = participantService;
             _stravaAuthenticationService = stravaAuthenticationService;
             _embedBuilderService = embedBuilderService;
             _athleteService = athleteService;
+            _stravaCredentialService = stravaCredentialService;
         }
 
         [Command("list")]
@@ -96,6 +99,35 @@ namespace StravaDiscordBot.Discord.Modules
                     var athlete = await policy.ExecuteAsync(x => _athleteService.Get(participant.StravaId), context);
                     foreach (var embed in _embedBuilderService.BuildDetailedAthleteEmbeds(participant, athlete))
                         await ReplyAsync(embed: embed);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "list failed");
+                }
+            }
+        }
+
+        [Command("remove")]
+        [Summary("[ADMIN] Remove user from leaderboard by discord user ID. Usage: `@mention remove 1234`")]
+        [RequireToBeWhitelistedServer]
+        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        public async Task RemoveParticipant(string discordId)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    var participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), discordId);
+                    if (participant == null)
+                    {
+                        await ReplyAsync($"Participant with id {discordId} wasn't found.");
+                        return;
+                    }
+
+                    var credentials = await _stravaCredentialService.GetByStravaId(participant.StravaId);
+                    await _participantService.Remove(participant, credentials);
+
+                    await ReplyAsync($"Participant with id {discordId} was removed.");
                 }
                 catch (Exception e)
                 {

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Microsoft.Extensions.Logging;
+using StravaDiscordBot.Discord.Modules.NamedArgs;
 using StravaDiscordBot.Discord.Utilities;
+using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
@@ -16,6 +19,7 @@ namespace StravaDiscordBot.Discord.Modules
         private readonly IStravaAuthenticationService _stravaAuthenticationService;
         private readonly IActivitiesService _activitiesService;
         private readonly ILeaderboardService _leaderboardService;
+        private readonly IRoleService _roleService;
         private readonly ILeaderboardService _leaderboardResultService;
         private readonly ILogger<LeaderboardModule> _logger;
         private readonly ILeaderboardParticipantService _participantService;
@@ -26,7 +30,8 @@ namespace StravaDiscordBot.Discord.Modules
             IEmbedBuilderService embedBuilderService,
             IStravaAuthenticationService stravaAuthenticationService,
             IActivitiesService activitiesService,
-            ILeaderboardService leaderboardService)
+            ILeaderboardService leaderboardService,
+            IRoleService roleService)
         {
             _logger = logger;
             _participantService = participantService;
@@ -35,6 +40,7 @@ namespace StravaDiscordBot.Discord.Modules
             _stravaAuthenticationService = stravaAuthenticationService;
             _activitiesService = activitiesService;
             _leaderboardService = leaderboardService;
+            _roleService = roleService;
         }
 
         [Command("join")]
@@ -57,18 +63,20 @@ namespace StravaDiscordBot.Discord.Modules
             }
         }
 
-
         [Command("leaderboard")]
         [Summary("[ADMIN] Manually triggers leaderboard in channel written")]
         [RequireToBeWhitelistedServer]
         [RequireRole(new[] { "Owner", "Bot Manager" })]
-        public async Task ShowLeaderboard()
+        public async Task ShowLeaderboard(LeaderboardNamedArgs leaderboardArguments)
         {
             using (Context.Channel.EnterTypingState())
             {
                 try
                 {
                     _logger.LogInformation("Executing leaderboard command");
+                    if (leaderboardArguments.WithRoles)
+                        await _roleService.RemoveRoleFromAllInServer(Context.Guild.Id.ToString(), Constants.LeaderboardWinnerRoleName);
+
                     var start = DateTime.Now.AddDays(-7);
                     var participantsWithActivities = new List<ParticipantWithActivities>();
                     var participants = _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
@@ -102,10 +110,38 @@ namespace StravaDiscordBot.Discord.Modules
                            DateTime.Now
                        )
                    );
+
+                    if (leaderboardArguments.WithRoles)
+                    {
+                        var allParticipantResults = realRideResult.SubCategoryResults
+                            .SelectMany(x => x.OrderedParticipantResults)
+                            .Union(virtualRideResult.SubCategoryResults.SelectMany(x => x.OrderedParticipantResults))
+                            .ToList();
+
+                        await GrantWinnerRoles(Context.Guild.Id.ToString(), allParticipantResults);
+                    }
+
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "leaderboard failed");
+                }
+            }
+        }
+        //TODO: Refactor to be reused in here and hosted service
+        private async Task GrantWinnerRoles(string serverId, List<ParticipantResult> leaderboardResults)
+        {
+            foreach (var participantResult in leaderboardResults)
+            {
+                try
+                {
+                    await _roleService.GrantUserRole(serverId,
+                        participantResult.Participant.DiscordUserId, Constants.LeaderboardWinnerRoleName);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e,
+                        $"Failed to grant leaderboard role for '{participantResult.Participant.DiscordUserId}'");
                 }
             }
         }

@@ -83,34 +83,6 @@ namespace StravaDiscordBot.Discord.Modules
             }
         }
 
-        [Command("remove")]
-        [Summary("[ADMIN] Remove user from leaderboard by discord user ID. Usage: `@mention remove 1234`")]
-        [RequireToBeWhitelistedServer]
-        public async Task RemoveParticipant(string discordId)
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                try
-                {
-                    var participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), discordId);
-                    if (participant == null)
-                    {
-                        await ReplyAsync($"Participant with id {discordId} wasn't found.");
-                        return;
-                    }
-
-                    var credentials = await _stravaCredentialService.GetByStravaId(participant.StravaId);
-                    await _participantService.Remove(participant, credentials);
-
-                    await ReplyAsync($"Participant with id {discordId} was removed.");
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "list failed");
-                }
-            }
-        }
-
         [Command("grant-winner-role")]
         [Summary(
             "[ADMIN] Grant leaderboard winner role to discord user ID (for testing purposes). Usage: `@mention grant-winner-role 1234`")]
