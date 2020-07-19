@@ -6,7 +6,6 @@ using IO.Swagger.Model;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
-using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord
@@ -14,7 +13,7 @@ namespace StravaDiscordBot.Discord
     public interface IEmbedBuilderService
     {
         Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end);
-        Embed BuildParticipantStatsForCategoryEmbed(ParticipantWithActivities participantWithActivities, ICategory category, string title);
+        Embed BuildParticipantStatsForCategoryEmbed(CategoryResult categoryResult, string title);
         Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, DetailedAthlete athlete);
         List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, DetailedAthlete athlete);
         Embed BuildSimpleEmbed(string title, string description);
@@ -22,12 +21,10 @@ namespace StravaDiscordBot.Discord
 
     public class EmbedBuilderService : IEmbedBuilderService
     {
-        private readonly ILeaderboardService _leaderboardResultService;
         private readonly ILogger<EmbedBuilderService> _logger;
 
-        public EmbedBuilderService(ILeaderboardService leaderboardResultService, ILogger<EmbedBuilderService> logger)
+        public EmbedBuilderService(ILogger<EmbedBuilderService> logger)
         {
-            _leaderboardResultService = leaderboardResultService;
             _logger = logger;
         }
 
@@ -62,12 +59,8 @@ namespace StravaDiscordBot.Discord
             return embedBuilder.Build();
         }
 
-        public Embed BuildParticipantStatsForCategoryEmbed(ParticipantWithActivities participantWithActivities, ICategory category, string title)
+        public Embed BuildParticipantStatsForCategoryEmbed(CategoryResult categoryResult, string title)
         {
-            var categoryResult = _leaderboardResultService.GetTopResultsForCategory(
-                new List<ParticipantWithActivities> { participantWithActivities },
-                category);
-
             var embedBuilder = new EmbedBuilder()
                 .WithTitle(title)
                 .WithCurrentTimestamp()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -22,13 +23,15 @@ namespace StravaDiscordBot.Discord.Modules
         private readonly ILeaderboardParticipantService _participantService;
         private readonly IStravaAuthenticationService _stravaAuthenticationService;
         private readonly IActivitiesService _activityService;
+        private readonly ILeaderboardService _leaderboardService;
 
         public PublicModule(ILogger<PublicModule> logger,
             CommandService commandService,
             ILeaderboardParticipantService participantService,
             IEmbedBuilderService embedBuilderService,
             IStravaAuthenticationService stravaAuthenticationService,
-            IActivitiesService activityService)
+            IActivitiesService activityService,
+            ILeaderboardService leaderboardService)
         {
             _logger = logger;
             _commandService = commandService;
@@ -36,6 +39,7 @@ namespace StravaDiscordBot.Discord.Modules
             _embedBuilderService = embedBuilderService;
             _stravaAuthenticationService = stravaAuthenticationService;
             _activityService = activityService;
+            _leaderboardService = leaderboardService;
         }
 
         [Command("help")]
@@ -85,12 +89,18 @@ namespace StravaDiscordBot.Discord.Modules
 
                     var participantWithActivities = new ParticipantWithActivities { Participant = participant, Activities = activities };
 
-                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participantWithActivities,
-                        new RealRideCategory(), 
+                    var realRideCategoryResult = _leaderboardService.GetTopResultsForCategory(
+                        new List<ParticipantWithActivities> { participantWithActivities },
+                        new RealRideCategory());
+
+                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(realRideCategoryResult,
                         $"'{new RealRideCategory().Name}' leaderboard for '{start:yyyy MMMM dd} - {DateTime.Now:yyyy MMMM dd}'"));
 
-                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(participantWithActivities, 
-                        new VirtualRideCategory(),
+                    var virtualRideCategoryResult = _leaderboardService.GetTopResultsForCategory(
+                       new List<ParticipantWithActivities> { participantWithActivities },
+                       new RealRideCategory());
+
+                    await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(virtualRideCategoryResult,
                         $"'{new VirtualRideCategory().Name}' leaderboard for '{start:yyyy MMMM dd} - {DateTime.Now:yyyy MMMM dd}'"));
                 }
                 catch (Exception e)
