@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Discord;
 using IO.Swagger.Model;
+using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
@@ -22,10 +23,12 @@ namespace StravaDiscordBot.Discord
     public class EmbedBuilderService : IEmbedBuilderService
     {
         private readonly ILeaderboardService _leaderboardResultService;
+        private readonly ILogger<EmbedBuilderService> _logger;
 
-        public EmbedBuilderService(ILeaderboardService leaderboardResultService)
+        public EmbedBuilderService(ILeaderboardService leaderboardResultService, ILogger<EmbedBuilderService> logger)
         {
             _leaderboardResultService = leaderboardResultService;
+            _logger = logger;
         }
 
         public Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end)
@@ -36,16 +39,21 @@ namespace StravaDiscordBot.Discord
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
 
-
+            var fieldCount = 0;
             foreach (var subCategoryResult in categoryResult.SubCategoryResults)
             {
+                _logger.LogInformation($"Adding field no. {fieldCount} - category name for {subCategoryResult.Name}");
+                fieldCount++;
                 embedBuilder.AddField(efb => efb.WithName("Category")
                 .WithValue(subCategoryResult.Name)
                 .WithIsInline(false));
 
+
                 var place = 1;
                 foreach (var participantResult in subCategoryResult.OrderedParticipantResults)
                 {
+                    _logger.LogInformation($"Adding field no. {fieldCount} - Place result for place {place}");
+                    fieldCount++;
                     embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
                         .WithName(
                             $"{OutputFormatters.PlaceToEmote(place)} - {participantResult.DisplayValue}")
@@ -54,8 +62,9 @@ namespace StravaDiscordBot.Discord
                     if (place > 3)
                         break;
                 }
-
             }
+
+            _logger.LogInformation($"Building leaderboard embed with {fieldCount} fields");
 
             return embedBuilder.Build();
         }
