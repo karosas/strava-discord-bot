@@ -15,32 +15,17 @@ namespace StravaDiscordBot.Discord.Modules
 {
     public class LeaderboardModule : ModuleBase<SocketCommandContext>
     {
-        private readonly IEmbedBuilderService _embedBuilderService;
         private readonly IStravaAuthenticationService _stravaAuthenticationService;
-        private readonly IActivitiesService _activitiesService;
         private readonly ILeaderboardService _leaderboardService;
-        private readonly IRoleService _roleService;
-        private readonly ILeaderboardService _leaderboardResultService;
         private readonly ILogger<LeaderboardModule> _logger;
-        private readonly ILeaderboardParticipantService _participantService;
 
         public LeaderboardModule(ILogger<LeaderboardModule> logger,
-            ILeaderboardParticipantService participantService,
-            ILeaderboardService leaderboardResultService,
-            IEmbedBuilderService embedBuilderService,
             IStravaAuthenticationService stravaAuthenticationService,
-            IActivitiesService activitiesService,
-            ILeaderboardService leaderboardService,
-            IRoleService roleService)
+            ILeaderboardService leaderboardService)
         {
             _logger = logger;
-            _participantService = participantService;
-            _leaderboardResultService = leaderboardResultService;
-            _embedBuilderService = embedBuilderService;
             _stravaAuthenticationService = stravaAuthenticationService;
-            _activitiesService = activitiesService;
             _leaderboardService = leaderboardService;
-            _roleService = roleService;
         }
 
         [Command("join")]
@@ -73,78 +58,20 @@ namespace StravaDiscordBot.Discord.Modules
             {
                 try
                 {
-                    _logger.LogInformation("Executing leaderboard command");
-                    if (leaderboardArguments.WithRoles)
-                        await _roleService.RemoveRoleFromAllInServer(Context.Guild.Id.ToString(), Constants.LeaderboardWinnerRoleName);
-
-                    var start = DateTime.Now.AddDays(-7);
-                    var participantsWithActivities = new List<ParticipantWithActivities>();
-                    var participants = _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
-
-                    foreach (var participant in participants)
-                    {
-                        var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
-
-                        var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
-                        participantsWithActivities.Add(new ParticipantWithActivities
-                        {
-                            Participant = participant,
-                            Activities = activities
-                        });
-                    }
-
-                    var realRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new RealRideCategory());
-                    await ReplyAsync(embed: _embedBuilderService
-                        .BuildLeaderboardEmbed(
-                            realRideResult,
-                            start,
-                            DateTime.Now
-                        )
+                    await _leaderboardService.GenerateForServer(
+                        Context.Channel,
+                        Context.Guild.Id.ToString(),
+                        DateTime.Now.AddDays(-7),
+                        leaderboardArguments.WithRoles,
+                        new RealRideCategory(),
+                        new VirtualRideCategory()
                     );
-
-                    var virtualRideResult = _leaderboardService.GetTopResultsForCategory(participantsWithActivities, new VirtualRideCategory());
-                    await ReplyAsync(embed: _embedBuilderService
-                       .BuildLeaderboardEmbed(
-                           virtualRideResult,
-                           start,
-                           DateTime.Now
-                       )
-                   );
-
-                    if (leaderboardArguments.WithRoles)
-                    {
-                        var winners = new List<ParticipantResult>();
-                        foreach(var subCategoryResult in realRideResult.SubCategoryResults)
-                            winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
-
-                        foreach (var subCategoryResult in virtualRideResult.SubCategoryResults)
-                            winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
-
-                        await GrantWinnerRoles(Context.Guild.Id.ToString(), winners);
-                    }
-
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
-                    _logger.LogError(e, "leaderboard failed");
+                    _logger.LogError(e, $"Failed to generate manual leaderboard for { Context.Guild.Id.ToString()}");
                 }
-            }
-        }
-        //TODO: Refactor to be reused in here and hosted service
-        private async Task GrantWinnerRoles(string serverId, List<ParticipantResult> leaderboardResults)
-        {
-            foreach (var participantResult in leaderboardResults)
-            {
-                try
-                {
-                    await _roleService.GrantUserRole(serverId,
-                        participantResult.Participant.DiscordUserId, Constants.LeaderboardWinnerRoleName);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e,
-                        $"Failed to grant leaderboard role for '{participantResult.Participant.DiscordUserId}'");
-                }
+
             }
         }
     }
