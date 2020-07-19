@@ -22,7 +22,7 @@ namespace StravaDiscordBot.Models.Categories
             return new SubCategoryResult
             {
                 Name = Name,
-                OrderedParticipantResults = participantResults?.OrderBy(x => x.Value).ToList()
+                OrderedParticipantResults = participantResults?.OrderByDescending(x => x.Value).ToList()
             };
         }
     }

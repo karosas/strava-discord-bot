@@ -113,12 +113,14 @@ namespace StravaDiscordBot.Discord.Modules
 
                     if (leaderboardArguments.WithRoles)
                     {
-                        var allParticipantResults = realRideResult.SubCategoryResults
-                            .SelectMany(x => x.OrderedParticipantResults)
-                            .Union(virtualRideResult.SubCategoryResults.SelectMany(x => x.OrderedParticipantResults))
-                            .ToList();
+                        var winners = new List<ParticipantResult>();
+                        foreach(var subCategoryResult in realRideResult.SubCategoryResults)
+                            winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
 
-                        await GrantWinnerRoles(Context.Guild.Id.ToString(), allParticipantResults);
+                        foreach (var subCategoryResult in virtualRideResult.SubCategoryResults)
+                            winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
+
+                        await GrantWinnerRoles(Context.Guild.Id.ToString(), winners);
                     }
 
                 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,7 @@ namespace StravaDiscordBot.Services
 
         public CategoryResult GetTopResultsForCategory(List<ParticipantWithActivities> participantsWithActivities, ICategory category)
         {
-            var subcategoryParticipantResults = new Dictionary<ISubCategory, List<ParticipantResult>>();
+            var subcategoryParticipantResults = new Dictionary<string, (ISubCategory subCategory, List<ParticipantResult> results)>();
 
             foreach (var participantWithActivities in participantsWithActivities)
             {
@@ -49,10 +50,10 @@ namespace StravaDiscordBot.Services
 
                 foreach (var subCategory in category.SubCategories)
                 {
-                    if (!subcategoryParticipantResults.ContainsKey(subCategory))
-                        subcategoryParticipantResults.Add(subCategory, new List<ParticipantResult>());
+                    if (!subcategoryParticipantResults.ContainsKey(subCategory.Name))
+                        subcategoryParticipantResults.Add(subCategory.Name, (subCategory, new List<ParticipantResult>()));
 
-                    subcategoryParticipantResults[subCategory].Add(subCategory.CalculateParticipantsResults(participant, matchingActivities));
+                    subcategoryParticipantResults[subCategory.Name].results.Add(subCategory.CalculateParticipantsResults(participant, matchingActivities));
                 }
             }
 
@@ -62,7 +63,7 @@ namespace StravaDiscordBot.Services
                 SubCategoryResults = subcategoryParticipantResults
                 .Select(x =>
                 {
-                    return x.Key.CalculateTotalResult(x.Value);
+                    return x.Value.subCategory.CalculateTotalResult(x.Value.results);
                 })
                 .ToList()
             };

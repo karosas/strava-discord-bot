@@ -39,11 +39,8 @@ namespace StravaDiscordBot.Discord
                 .WithCurrentTimestamp()
                 .WithColor(Color.Green);
 
-            var fieldCount = 0;
             foreach (var subCategoryResult in categoryResult.SubCategoryResults)
             {
-                _logger.LogInformation($"Adding field no. {fieldCount} - category name for {subCategoryResult.Name}");
-                fieldCount++;
                 embedBuilder.AddField(efb => efb.WithName("Category")
                 .WithValue(subCategoryResult.Name)
                 .WithIsInline(false));
@@ -52,8 +49,6 @@ namespace StravaDiscordBot.Discord
                 var place = 1;
                 foreach (var participantResult in subCategoryResult.OrderedParticipantResults)
                 {
-                    _logger.LogInformation($"Adding field no. {fieldCount} - Place result for place {place}");
-                    fieldCount++;
                     embedBuilder.AddField(efb => efb.WithValue(participantResult.Participant.GetDiscordMention())
                         .WithName(
                             $"{OutputFormatters.PlaceToEmote(place)} - {participantResult.DisplayValue}")
@@ -63,8 +58,6 @@ namespace StravaDiscordBot.Discord
                         break;
                 }
             }
-
-            _logger.LogInformation($"Building leaderboard embed with {fieldCount} fields");
 
             return embedBuilder.Build();
         }
