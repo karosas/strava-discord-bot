@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Helpers;
@@ -66,13 +67,19 @@ namespace StravaDiscordBot.Services
             foreach (var participant in participants)
             {
                 var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
-
-                var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
-                participantsWithActivities.Add(new ParticipantWithActivities
+                try
                 {
-                    Participant = participant,
-                    Activities = activities
-                });
+                    var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
+                    participantsWithActivities.Add(new ParticipantWithActivities
+                    {
+                        Participant = participant,
+                        Activities = activities
+                    });
+                }
+                catch (ApiException e)
+                {
+                    _logger.LogWarning(e, $"Failed to fetch activities for {participant.DiscordUserId}, exlcluding participant from leaderboard");
+                }
             }
 
             var categoryResults = new List<CategoryResult>();

@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
+using StravaDiscordBot.Discord.Modules.NamedArgs;
 using StravaDiscordBot.Discord.Utilities;
+using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord.Modules
@@ -50,9 +53,15 @@ namespace StravaDiscordBot.Discord.Modules
                     foreach (var participant in participants)
                     {
                         var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
-                        var athlete = await policy.ExecuteAsync(x => _athleteService.Get(participant.StravaId), context);
-
-                        embeds.Add(_embedBuilderService.BuildAthleteInfoEmbed(participant, athlete));
+                        try
+                        {
+                            var athlete = await policy.ExecuteAsync(x => _athleteService.Get(participant.StravaId), context);
+                            embeds.Add(_embedBuilderService.BuildAthleteInfoEmbed(participant, athlete));
+                        }
+                        catch (ApiException e)
+                        {
+                            _logger.LogWarning(e, $"Failed to fetch athlete info for {participant.DiscordUserId}");
+                        }
                     }
 
                     if (!embeds.Any())
@@ -77,23 +86,24 @@ namespace StravaDiscordBot.Discord.Modules
         [Summary("[ADMIN] Get detailed information of the participant by discord user ID. Usage: `@mention get 1234`")]
         [RequireToBeWhitelistedServer]
         [RequireRole(new[] { "Owner", "Bot Manager" })]
-        public async Task GetDetailedParticipant(string discordId)
+        public async Task GetDetailedParticipant(FindParticipantNamedArgs args)
         {
             using (Context.Channel.EnterTypingState())
             {
                 try
                 {
-                    _logger.LogInformation($"Executing get {discordId}");
+                    if (string.IsNullOrWhiteSpace(args.DiscordId) || string.IsNullOrWhiteSpace(args.StravaId))
+                        throw new ArgumentException();
 
-                    var participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), discordId);
+                    LeaderboardParticipant participant = null;
+
+                    if(!string.IsNullOrWhiteSpace(args.DiscordId))
+                        participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), args.DiscordId);
+                    else if(!string.IsNullOrWhiteSpace(args.StravaId))
+                        participant = _participantService.GetParticipantByStravaIdOrDefault(Context.Guild.Id.ToString(), args.StravaId);
+
                     if (participant == null)
-                    {
-                        await ReplyAsync(embed: _embedBuilderService.BuildSimpleEmbed(
-                            "Not Found",
-                            "Couldn't find participant with this discord id")
-                        );
-                        return;
-                    }
+                        throw new ArgumentException();
 
                     var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
                     var athlete = await policy.ExecuteAsync(x => _athleteService.Get(participant.StravaId), context);
@@ -103,6 +113,10 @@ namespace StravaDiscordBot.Discord.Modules
                 catch (Exception e)
                 {
                     _logger.LogError(e, "list failed");
+                    await ReplyAsync(embed: _embedBuilderService.BuildSimpleEmbed(
+                        "Not Found",
+                        "Couldn't find participant with given parameters")
+);
                 }
             }
         }

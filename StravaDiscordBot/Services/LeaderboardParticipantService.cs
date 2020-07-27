@@ -11,6 +11,7 @@ namespace StravaDiscordBot.Services
 {
     public interface ILeaderboardParticipantService
     {
+        LeaderboardParticipant GetParticipantByStravaIdOrDefault(string serverId, string stravaId);
         LeaderboardParticipant GetParticipantOrDefault(string serverId, string discordUserId);
         List<LeaderboardParticipant> GetAllParticipantsForServerAsync(string serverId);
         Task Remove(LeaderboardParticipant participant, StravaCredential credentials = null);
@@ -62,6 +63,13 @@ namespace StravaDiscordBot.Services
             return _dbContext
                 .Participants
                 .FirstOrDefault(x => x.ServerId == serverId && x.DiscordUserId == discordUserId);
+        }
+
+        public LeaderboardParticipant GetParticipantByStravaIdOrDefault(string serverId, string stravaId)
+        {
+            return _dbContext
+                .Participants
+                .FirstOrDefault(x => x.ServerId == serverId && x.StravaId == stravaId);
         }
 
         public async Task Remove(LeaderboardParticipant participant, StravaCredential credentials = null)

@@ -126,13 +126,8 @@ namespace StravaDiscordBot.Services
                         await channel?.SendMessageAsync(
                    "Hey, I failed to refresh access to your Strava account. Please use `join` command again in the server of leaderboard.");
                     }
-
+                    throw;
                 }
-            }
-            // If all else fails, just ask the participant to re-join
-            else if (retryAttempt == 2 && context[StravaIdContextKey] is string stravaId2)
-            {
-
             }
 
             Logger.LogWarning("Couldn't find stravaId inside Polly context");

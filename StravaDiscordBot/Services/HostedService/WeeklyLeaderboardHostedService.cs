@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
-using StravaDiscordBot.Discord;
-using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Extensions;
-using StravaDiscordBot.Helpers;
-using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Storage;
 
