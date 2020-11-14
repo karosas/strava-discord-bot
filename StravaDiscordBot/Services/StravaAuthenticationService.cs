@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
+using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Storage;
 using StravaDiscordBot.Strava;
 
@@ -87,7 +88,7 @@ namespace StravaDiscordBot.Services
             pollyContext[StravaIdContextKey] = stravaId;
 
             return (Policy
-                    .Handle<ApiException>(ex => ex.ErrorCode == 401)
+                    .Handle<StravaException>()
                     .RetryAsync(1, OnUnauthorizedRetry),
                 pollyContext);
         }

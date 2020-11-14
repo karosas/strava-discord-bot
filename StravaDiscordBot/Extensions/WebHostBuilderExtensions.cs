@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Events;
+using Serilog.Exceptions;
 using Serilog.Sinks.Elasticsearch;
 
 namespace StravaDiscordBot.Extensions
@@ -15,6 +16,7 @@ namespace StravaDiscordBot.Extensions
                 .UseSerilog((builderContext, loggerConfig) =>
                 {
                     loggerConfig.Enrich.FromLogContext();
+                    loggerConfig.Enrich.WithExceptionDetails();
                     loggerConfig.Enrich.WithProperty("Environment", builderContext.HostingEnvironment.EnvironmentName);
                     loggerConfig.Enrich.WithProperty("Type", "DiscordStravaBot");
                     loggerConfig.MinimumLevel.Debug();
