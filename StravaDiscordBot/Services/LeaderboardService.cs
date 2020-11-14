@@ -70,16 +70,19 @@ namespace StravaDiscordBot.Services
                 var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
                 try
                 {
-                    var activities = await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start), context);
+                    var activities =
+                        await policy.ExecuteAsync(x => _activitiesService.GetForStravaUser(participant.StravaId, start),
+                            context);
                     participantsWithActivities.Add(new ParticipantWithActivities
                     {
                         Participant = participant,
                         Activities = activities
                     });
                 }
-                catch (StravaException e)
+                catch (Exception e)
                 {
-                    _logger.LogWarning(e, $"Failed to fetch activities for {participant.DiscordUserId}, excluding participant from leaderboard");
+                    _logger.LogWarning(e,
+                        $"Failed to fetch activities for {participant.DiscordUserId}, excluding participant from leaderboard");
                 }
             }
 
