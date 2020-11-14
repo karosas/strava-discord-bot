@@ -6,6 +6,7 @@ using Discord;
 using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord;
+using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
@@ -76,9 +77,9 @@ namespace StravaDiscordBot.Services
                         Activities = activities
                     });
                 }
-                catch (ApiException e)
+                catch (StravaException e)
                 {
-                    _logger.LogWarning(e, $"Failed to fetch activities for {participant.DiscordUserId}, exlcluding participant from leaderboard");
+                    _logger.LogWarning(e, $"Failed to fetch activities for {participant.DiscordUserId}, excluding participant from leaderboard");
                 }
             }
 

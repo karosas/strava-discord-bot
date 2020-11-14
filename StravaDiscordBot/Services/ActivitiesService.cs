@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IO.Swagger.Api;
 using IO.Swagger.Model;
 using Microsoft.Extensions.Logging;
+using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Storage;
 
@@ -41,7 +42,7 @@ namespace StravaDiscordBot.Services
             {
                 Logger.LogError(e, $"Failed to fetch activities for strava id {stravaId}");
                 _activitiesApi.Configuration.AccessToken = string.Empty;
-                throw;
+                throw new StravaException($"Failed to fetch activities for strava id {stravaId}", e);
             }
         }
     }

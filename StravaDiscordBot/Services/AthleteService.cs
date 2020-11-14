@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using IO.Swagger.Api;
 using IO.Swagger.Model;
 using Microsoft.Extensions.Logging;
+using StravaDiscordBot.Exceptions;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services
@@ -41,7 +42,7 @@ namespace StravaDiscordBot.Services
             {
                 Logger.LogError(e, "Failed to fetch athlete");
                 _athletesApi.Configuration.AccessToken = string.Empty;
-                throw;
+                throw new StravaException($"Failed to fetch athlete for strava Id {stravaId}", e);
             }
         }
     }
