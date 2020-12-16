@@ -68,7 +68,6 @@ namespace StravaDiscordBot.Discord.Modules
             }
         }
 
-
         [Command("stats")]
         [Summary("Show your weekly stats")]
         public async Task ShowParticipantStats()
