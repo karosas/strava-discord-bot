@@ -28,7 +28,10 @@ namespace StravaDiscordBot.Discord
             "UpdatedAt",
             "Clubs",
             "Bikes",
-            "Shoes"
+            "Shoes",
+            "ResourceState",
+            "MeasurementPreference",
+            "ProfileMedium"
         };
 
         public EmbedBuilderService(ILogger<EmbedBuilderService> logger)
@@ -103,7 +106,7 @@ namespace StravaDiscordBot.Discord
                 return results;
             }
 
-            embedBuilder.WithTitle($"Detailed Info - {participant.DiscordUserId}");
+            embedBuilder.WithTitle($"Detailed Info - <@!{participant.DiscordUserId}>");
             var embedFieldsAdded = 0;
             foreach (var propertyInfo in athlete.GetType().GetProperties())
             {
