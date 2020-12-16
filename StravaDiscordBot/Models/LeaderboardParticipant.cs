@@ -19,7 +19,7 @@
 
         public string GetDiscordMention(bool silent = false)
         {
-            return silent ? $"`<@{DiscordUserId}>`" : $"<@{DiscordUserId}>";
+            return silent ? $"`<@{DiscordUserId}>`" : $"<@!${DiscordUserId}>";
         }
     }
 }

@@ -22,7 +22,7 @@ namespace StravaDiscordBot.Discord
     public class EmbedBuilderService : IEmbedBuilderService
     {
         private readonly ILogger<EmbedBuilderService> _logger;
-        public static readonly string[] StravaPropertyBlacklist = {
+        private static readonly string[] StravaPropertyBlacklist = {
             "Lastname",
             "City",
             "UpdatedAt",
