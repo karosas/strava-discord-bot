@@ -125,7 +125,7 @@ namespace StravaDiscordBot.Services
                         var user = _socketClient.GetUser(discordUserId);
                         var channel = await user?.GetOrCreateDMChannelAsync();
                         await channel?.SendMessageAsync(
-                   "Hey, I failed to refresh access to your Strava account. Please use `join` command again in the server of leaderboard.");
+                        "Hey, I failed to refresh access to your Strava account. Please use `join` command again in the server of leaderboard.");
                     }
                     throw;
                 }

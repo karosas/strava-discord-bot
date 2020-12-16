@@ -28,7 +28,7 @@ namespace StravaDiscordBot.Services
             {
                 Logger.LogInformation($"Fetching athlete for strava id {stravaId}");
                 
-                string accessToken = accessTokenOverride;
+                var accessToken = accessTokenOverride;
                 if(accessToken == null)
                 {
                     var credentials = await GetCredentials(stravaId);

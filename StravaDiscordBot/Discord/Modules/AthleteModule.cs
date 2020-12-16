@@ -86,24 +86,23 @@ namespace StravaDiscordBot.Discord.Modules
         [Summary("[ADMIN] Get detailed information of the participant by discord user ID. Usage: `@mention get 1234`")]
         [RequireToBeWhitelistedServer]
         [RequireRole(new[] { "Owner", "Bot Manager" })]
-        public async Task GetDetailedParticipant(FindParticipantNamedArgs args)
+        public async Task GetDetailedParticipant(string id)
         {
             using (Context.Channel.EnterTypingState())
             {
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(args.DiscordId) || string.IsNullOrWhiteSpace(args.StravaId))
-                        throw new ArgumentException();
+                    if (string.IsNullOrWhiteSpace(id))
+                        throw new ArgumentNullException(nameof(id));
 
                     LeaderboardParticipant participant = null;
 
-                    if(!string.IsNullOrWhiteSpace(args.DiscordId))
-                        participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), args.DiscordId);
-                    else if(!string.IsNullOrWhiteSpace(args.StravaId))
-                        participant = _participantService.GetParticipantByStravaIdOrDefault(Context.Guild.Id.ToString(), args.StravaId);
+                    
+                    participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), id) ??
+                                  _participantService.GetParticipantByStravaIdOrDefault(Context.Guild.Id.ToString(), id);
 
                     if (participant == null)
-                        throw new ArgumentException();
+                        throw new ArgumentException("Couldn't find participant");
 
                     var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
                     var athlete = await policy.ExecuteAsync(x => _athleteService.Get(participant.StravaId), context);
@@ -112,7 +111,7 @@ namespace StravaDiscordBot.Discord.Modules
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "list failed");
+                    _logger.LogError(e, "get failed");
                     await ReplyAsync(embed: _embedBuilderService.BuildSimpleEmbed(
                         "Not Found",
                         "Couldn't find participant with given parameters")

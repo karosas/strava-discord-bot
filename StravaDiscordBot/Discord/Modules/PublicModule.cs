@@ -79,10 +79,12 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     var participant = _participantService.GetParticipantOrDefault(Context.Guild.Id.ToString(), Context.User.Id.ToString());
                     if (participant == null)
+                    {
                         await ReplyAsync("It seems like you're not part of the leaderboard. Try joining it.");
+                        return;
+                    }
 
                     var start = DateTime.Now.AddDays(-7);
-
 
                     var (policy, context) = _stravaAuthenticationService.GetUnauthorizedPolicy(participant.StravaId);
                     var activities = await policy.ExecuteAsync(x => _activityService.GetForStravaUser(participant.StravaId, start), context);
@@ -98,7 +100,7 @@ namespace StravaDiscordBot.Discord.Modules
 
                     var virtualRideCategoryResult = _leaderboardService.GetTopResultsForCategory(
                        new List<ParticipantWithActivities> { participantWithActivities },
-                       new RealRideCategory());
+                       new VirtualRideCategory());
 
                     await ReplyAsync(embed: _embedBuilderService.BuildParticipantStatsForCategoryEmbed(virtualRideCategoryResult,
                         $"'{new VirtualRideCategory().Name}' leaderboard for '{start:yyyy MMMM dd} - {DateTime.Now:yyyy MMMM dd}'"));
