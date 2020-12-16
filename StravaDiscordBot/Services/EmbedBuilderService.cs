@@ -15,13 +15,21 @@ namespace StravaDiscordBot.Discord
         Embed BuildLeaderboardEmbed(CategoryResult categoryResult, DateTime start, DateTime end);
         Embed BuildParticipantStatsForCategoryEmbed(CategoryResult categoryResult, string title);
         Embed BuildAthleteInfoEmbed(LeaderboardParticipant participant, DetailedAthlete athlete);
-        List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, DetailedAthlete athlete);
+        IEnumerable<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant, DetailedAthlete athlete);
         Embed BuildSimpleEmbed(string title, string description);
     }
 
     public class EmbedBuilderService : IEmbedBuilderService
     {
         private readonly ILogger<EmbedBuilderService> _logger;
+        public static readonly string[] StravaPropertyBlacklist = {
+            "Lastname",
+            "City",
+            "UpdatedAt",
+            "Clubs",
+            "Bikes",
+            "Shoes"
+        };
 
         public EmbedBuilderService(ILogger<EmbedBuilderService> logger)
         {
@@ -79,7 +87,7 @@ namespace StravaDiscordBot.Discord
             return embedBuilder.Build();
         }
 
-        public List<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant,
+        public IEnumerable<Embed> BuildDetailedAthleteEmbeds(LeaderboardParticipant participant,
             DetailedAthlete athlete)
         {
             var results = new List<Embed>();
@@ -99,7 +107,7 @@ namespace StravaDiscordBot.Discord
             var embedFieldsAdded = 0;
             foreach (var propertyInfo in athlete.GetType().GetProperties())
             {
-                if (string.IsNullOrEmpty(propertyInfo.Name))
+                if (string.IsNullOrEmpty(propertyInfo.Name) || StravaPropertyBlacklist.Contains(propertyInfo.Name))
                     continue;
 
                 var value = propertyInfo.GetValue(athlete)?.ToString();

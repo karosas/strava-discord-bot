@@ -143,11 +143,8 @@ namespace StravaDiscordBot.Services
             {
                 Name = category.Name,
                 SubCategoryResults = subcategoryParticipantResults
-                .Select(x =>
-                {
-                    return x.Value.subCategory.CalculateTotalResult(x.Value.results);
-                })
-                .ToList()
+                    .Select(x => x.Value.subCategory.CalculateTotalResult(x.Value.results))
+                    .ToList()
             };
         }
 
