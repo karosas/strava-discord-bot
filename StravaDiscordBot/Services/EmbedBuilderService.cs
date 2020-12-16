@@ -106,8 +106,14 @@ namespace StravaDiscordBot.Discord
                 return results;
             }
 
-            embedBuilder.WithTitle($"Detailed Info - <@!{participant.DiscordUserId}>");
+            embedBuilder.WithTitle($"Leaderboard participant's profile");
             var embedFieldsAdded = 0;
+            
+            embedBuilder
+                .AddField(efb => efb.WithName("Discord Id")
+                    .WithValue(participant.DiscordUserId)
+                    .WithIsInline(true));
+            embedFieldsAdded++;
             foreach (var propertyInfo in athlete.GetType().GetProperties())
             {
                 if (string.IsNullOrEmpty(propertyInfo.Name) || StravaPropertyBlacklist.Contains(propertyInfo.Name))
