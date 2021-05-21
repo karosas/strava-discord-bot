@@ -129,6 +129,7 @@ namespace StravaDiscordBot
             DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
             DiscordClient.Log += LogAsync;
             app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
+            
             await DiscordClient.LoginAsync(TokenType.Bot, options.Discord.Token).ConfigureAwait(false);
             await DiscordClient.StartAsync().ConfigureAwait(false);
 
