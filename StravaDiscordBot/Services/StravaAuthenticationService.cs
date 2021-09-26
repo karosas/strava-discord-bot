@@ -24,7 +24,6 @@ namespace StravaDiscordBot.Services
         (AsyncRetryPolicy policy, Context context) GetUnauthorizedPolicy(string stravaId);
         Task<StravaOauthResponse> ExchangeCodeAsync(string code);
         Task<StravaOauthResponse> RefreshAccessTokenAsync(string refreshToken);
-
     }
 
     public class StravaAuthenticationService : BaseStravaService, IStravaAuthenticationService
@@ -123,9 +122,15 @@ namespace StravaDiscordBot.Services
                     if (participant != null && ulong.TryParse(participant.DiscordUserId, out var discordUserId))
                     {
                         var user = _socketClient.GetUser(discordUserId);
-                        var channel = await user?.GetOrCreateDMChannelAsync();
-                        await channel?.SendMessageAsync(
-                        "Hey, I failed to refresh access to your Strava account. Please use `join` command again in the server of leaderboard.");
+                        if (user != null)
+                        {
+                            var channel = await user.GetOrCreateDMChannelAsync();
+                            if (channel != null)
+                            {
+                                await channel.SendMessageAsync(
+                                    "Hey, I failed to refresh access to your Strava account. Please use `join` command again in the server of leaderboard.");
+                            }
+                        }
                     }
                     throw;
                 }
