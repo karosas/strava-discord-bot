@@ -20,7 +20,6 @@ namespace StravaDiscordBot.Services.HostedService
             ILeaderboardService leaderboardService, BotDbContext dbContext, AppOptions options) : base(JobCronExpression, TimeZoneInfo.Utc)
         {
             _logger = logger;
-            _logger.LogInformation(JsonConvert.SerializeObject(options));
             _leaderboardService = leaderboardService;
             _dbContext = dbContext;
         }
