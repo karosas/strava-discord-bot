@@ -17,10 +17,8 @@ namespace StravaDiscordBot.Services.HostedService
         private readonly ILeaderboardService _leaderboardService;
 
         public ParticipantCleanupHostedService(ILogger<ParticipantCleanupHostedService> logger,
-            ILeaderboardService leaderboardService, BotDbContext dbContext, IConfiguration configuration) : base(JobCronExpression, TimeZoneInfo.Utc)
+            ILeaderboardService leaderboardService, BotDbContext dbContext, AppOptions options) : base(JobCronExpression, TimeZoneInfo.Utc)
         {
-            var options = new AppOptions();
-            configuration.Bind(options);
             _logger.LogInformation(JsonConvert.SerializeObject(options));
             _logger = logger;
             _leaderboardService = leaderboardService;
