@@ -9,6 +9,7 @@ using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
+using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Discord.Modules
 {
@@ -132,7 +133,7 @@ namespace StravaDiscordBot.Discord.Modules
         
         [Command("prune")]
         [Summary(
-            "[ADMIN] Remove leaderboard participants who're no longer part of the server Usage: `@mention rprune`")]
+            "[ADMIN] Remove leaderboard participants who're no longer part of the server Usage: `@mention prune`")]
         [RequireToBeWhitelistedServer]
         public async Task PruneUsers()
         {
@@ -142,6 +143,27 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     var usersRemoved = await _leaderboardService.PruneUsers(Context.Guild.Id.ToString());
                     await ReplyAsync($"Removed {usersRemoved} users");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Failed to prune users");
+                    await ReplyAsync($"Failed - {e.Message}");
+                }
+            }
+        }
+        
+        [Command("count")]
+        [Summary(
+            "[ADMIN] Shows amount of leaderboard participants for server Usage: `@mention count`")]
+        [RequireToBeWhitelistedServer]
+        public async Task UserCount()
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    var users = _participantService.GetAllParticipantsForServerAsync(Context.Guild.Id.ToString());
+                    await ReplyAsync($"Server has {users.Count} leaderboard participants");
                 }
                 catch (Exception e)
                 {
