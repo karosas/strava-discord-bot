@@ -22,7 +22,7 @@ namespace StravaDiscordBot.Services
         Task<Leaderboard> GetForServer(string serverId);
         Task Create(Leaderboard leaderboard);
         Task GenerateForServer(IMessageChannel replyChannel, string serverId, DateTime start, bool grantWinnerRole, params ICategory[] categories);
-        Task PruneUsers(string serverId);
+        Task<int> PruneUsers(string serverId);
     }
 
     public class LeaderboardService : ILeaderboardService
@@ -120,17 +120,18 @@ namespace StravaDiscordBot.Services
             }
         }
 
-        public async Task PruneUsers(string serverId)
+        public async Task<int> PruneUsers(string serverId)
         {
             var leaderboard = await _dbContext.Leaderboards.FirstOrDefaultAsync(x => x.ServerId == serverId);
             if (leaderboard == null)
             {
                 _logger.LogError($"Leaderboard '{serverId}' not found");
-                return;
+                return 0;
             }
             
             var guild = _discordSocketClient.GetGuild(ulong.Parse(leaderboard.ServerId));
 
+            var usersRemoved = 0;
             _logger.LogInformation($"Cleaning up server {leaderboard.ServerId}");
             foreach (var participant in _dbContext.Participants.AsQueryable().Where(x => x.ServerId == leaderboard.ServerId))
             {
@@ -138,8 +139,11 @@ namespace StravaDiscordBot.Services
                 {
                     _logger.LogInformation($"Removing user '{participant.DiscordUserId}' ({participant.GetDiscordMention()}' from '{leaderboard.ServerId}'");
                     _dbContext.Participants.Remove(participant);
+                    usersRemoved++;
                 }
             }
+
+            return usersRemoved;
         }
 
         public async Task<Leaderboard> GetForServer(string serverId)

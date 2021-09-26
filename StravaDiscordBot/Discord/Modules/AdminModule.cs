@@ -129,5 +129,26 @@ namespace StravaDiscordBot.Discord.Modules
                 }
             }
         }
+        
+        [Command("prune")]
+        [Summary(
+            "[ADMIN] Remove leaderboard participants who're no longer part of the server Usage: `@mention rprune`")]
+        [RequireToBeWhitelistedServer]
+        public async Task PruneUsers()
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    var usersRemoved = await _leaderboardService.PruneUsers(Context.Guild.Id.ToString());
+                    await ReplyAsync($"Removed {usersRemoved} users");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Failed to prune users");
+                    await ReplyAsync($"Failed - {e.Message}");
+                }
+            }
+        }
     }
 }

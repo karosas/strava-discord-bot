@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.HostedService
@@ -15,8 +17,11 @@ namespace StravaDiscordBot.Services.HostedService
         private readonly ILeaderboardService _leaderboardService;
 
         public ParticipantCleanupHostedService(ILogger<ParticipantCleanupHostedService> logger,
-            ILeaderboardService leaderboardService, BotDbContext dbContext) : base(JobCronExpression, TimeZoneInfo.Utc)
+            ILeaderboardService leaderboardService, BotDbContext dbContext, IConfiguration configuration) : base(JobCronExpression, TimeZoneInfo.Utc)
         {
+            var options = new AppOptions();
+            configuration.Bind(options);
+            _logger.LogInformation(JsonConvert.SerializeObject(options));
             _logger = logger;
             _leaderboardService = leaderboardService;
             _dbContext = dbContext;
