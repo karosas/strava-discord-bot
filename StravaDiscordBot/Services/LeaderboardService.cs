@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Exceptions;
+using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
@@ -20,6 +22,7 @@ namespace StravaDiscordBot.Services
         Task<Leaderboard> GetForServer(string serverId);
         Task Create(Leaderboard leaderboard);
         Task GenerateForServer(IMessageChannel replyChannel, string serverId, DateTime start, bool grantWinnerRole, params ICategory[] categories);
+        Task PruneUsers(string serverId);
     }
 
     public class LeaderboardService : ILeaderboardService
@@ -31,6 +34,7 @@ namespace StravaDiscordBot.Services
         private readonly IStravaAuthenticationService _stravaAuthenticationService;
         private readonly IActivitiesService _activitiesService;
         private readonly IEmbedBuilderService _embedBuilderService;
+        private readonly DiscordSocketClient _discordSocketClient;
 
         public LeaderboardService(
             BotDbContext dbContext,
@@ -39,7 +43,7 @@ namespace StravaDiscordBot.Services
             ILeaderboardParticipantService participantService,
             IStravaAuthenticationService stravaAuthenticationService,
             IActivitiesService activitiesService,
-            IEmbedBuilderService embedBuilderService)
+            IEmbedBuilderService embedBuilderService, DiscordSocketClient discordSocketClient)
         {
             _dbContext = dbContext;
             _logger = logger;
@@ -48,6 +52,7 @@ namespace StravaDiscordBot.Services
             _stravaAuthenticationService = stravaAuthenticationService;
             _activitiesService = activitiesService;
             _embedBuilderService = embedBuilderService;
+            _discordSocketClient = discordSocketClient;
         }
 
         public async Task Create(Leaderboard leaderboard)
@@ -112,6 +117,28 @@ namespace StravaDiscordBot.Services
                 }
 
                 await GrantWinnerRoles(serverId, winners);
+            }
+        }
+
+        public async Task PruneUsers(string serverId)
+        {
+            var leaderboard = await _dbContext.Leaderboards.FirstOrDefaultAsync(x => x.ServerId == serverId);
+            if (leaderboard == null)
+            {
+                _logger.LogError($"Leaderboard '{serverId}' not found");
+                return;
+            }
+            
+            var guild = _discordSocketClient.GetGuild(ulong.Parse(leaderboard.ServerId));
+
+            _logger.LogInformation($"Cleaning up server {leaderboard.ServerId}");
+            foreach (var participant in _dbContext.Participants.AsQueryable().Where(x => x.ServerId == leaderboard.ServerId))
+            {
+                if (!guild.TryGetUser(participant.DiscordUserId, out _))
+                {
+                    _logger.LogInformation($"Removing user '{participant.DiscordUserId}' ({participant.GetDiscordMention()}' from '{leaderboard.ServerId}'");
+                    _dbContext.Participants.Remove(participant);
+                }
             }
         }
 

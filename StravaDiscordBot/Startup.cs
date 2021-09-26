@@ -83,6 +83,7 @@ namespace StravaDiscordBot
             // Hosted services
 
             services.AddHostedService<WeeklyLeaderboardHostedService>();
+            services.AddHostedService<ParticipantCleanupHostedService>();
 
             // API
 
@@ -125,6 +126,7 @@ namespace StravaDiscordBot
         private async Task StartDiscordBot(IApplicationBuilder app, ILogger<Startup> logger)
         {
             _logger = logger;
+            _logger.LogInformation("test");
             var options = app.ApplicationServices.GetService<AppOptions>();
             DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
             DiscordClient.Log += LogAsync;

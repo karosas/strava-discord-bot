@@ -7,13 +7,20 @@ namespace StravaDiscordBot
         public string ConnectionString { get; set; } = "Data Source=leaderboard.db;";
         public DiscordOptions Discord { get; set; }
         public StravaOptions Strava { get; set; }
+        public LokiOptions Loki { get; set; }
         public string BaseUrl { get; set; }
-        public HumioOptions Humio { get; set; }
         public bool LogToConsole { get; set; }
     }
 
     public class DiscordOptions
     {
+        public string Token { get; set; }
+        public DiscordLogWebhook[] LogWebhooks { get; set; }
+    }
+
+    public class DiscordLogWebhook
+    {
+        public ulong Id { get; set; }
         public string Token { get; set; }
     }
 
@@ -23,8 +30,10 @@ namespace StravaDiscordBot
         public string ClientSecret { get; set; }
     }
 
-    public class HumioOptions
+    public class LokiOptions
     {
-        public string Token { get; set; }
+        public string Url { get; set; }
+        public string User { get; set; }
+        public string Password { get; set; }
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
-using Serilog.Events;
 using Serilog.Exceptions;
-using Serilog.Sinks.Elasticsearch;
+using Serilog.Sinks.Discord;
+using Serilog.Sinks.Grafana.Loki;
+using LokiCredentials = Serilog.Sinks.Grafana.Loki.LokiCredentials;
 
 namespace StravaDiscordBot.Extensions
 {
@@ -24,23 +24,26 @@ namespace StravaDiscordBot.Extensions
                     var options = new AppOptions();
                     builderContext.Configuration.Bind(options);
 
-                    if (options.Humio != null && !string.IsNullOrEmpty(options.Humio.Token))
+                    if (options.Loki != null)
                     {
-                        loggerConfig.WriteTo.Logger(lc =>
-                        {
-                            lc.MinimumLevel.Information();
-                            lc.MinimumLevel.Override("System", LogEventLevel.Information);
-                            lc.MinimumLevel.Override("Microsoft", LogEventLevel.Information);
-
-                            lc.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("https://cloud.humio.com:443/api/v1/dataspaces/sandbox/ingest/elasticsearch"))
+                        loggerConfig.WriteTo.GrafanaLoki(options.Loki.Url,
+                            new[] {new LokiLabel {Key = "Project", Value = "strava-discord-bot"}},
+                            credentials: new LokiCredentials
                             {
-                                MinimumLogEventLevel = LogEventLevel.Information,
-                                ModifyConnectionSettings = c => c.BasicAuthentication(options.Humio.Token, ""),
-                                Period = TimeSpan.FromMilliseconds(500)
+                                Login = options.Loki.User,
+                                Password = options.Loki.Password
                             });
-                        });
                     }
-                    if(options.LogToConsole)
+
+                    if (options.Discord?.LogWebhooks != null)
+                    {
+                        foreach (var webhook in options.Discord.LogWebhooks)
+                        {
+                            loggerConfig.WriteTo.Discord(webhook.Id, webhook.Token);
+                        }
+                    }
+
+                    if (options.LogToConsole)
                         loggerConfig.WriteTo.Console();
                 });
         }
