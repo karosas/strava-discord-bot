@@ -5,7 +5,7 @@
     <UserSecretsId>strava-discord-bot-13mdf4j3-23jnejkn</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
-    <LangVersion>9</LangVersion>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
