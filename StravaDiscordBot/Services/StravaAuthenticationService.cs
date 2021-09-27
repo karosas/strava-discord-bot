@@ -28,13 +28,11 @@ namespace StravaDiscordBot.Services
     public class StravaAuthenticationService : BaseStravaService, IStravaAuthenticationService
     {
         public const string StravaIdContextKey = "strava-id";
-        private readonly ILogger<StravaAuthenticationService> _logger;
         private readonly AppOptions _options;
         private readonly DiscordSocketClient _socketClient;
 
-        public StravaAuthenticationService(ILogger<StravaAuthenticationService> _logger, AppOptions options, BotDbContext dbContext, DiscordSocketClient socketClient) : base(dbContext, _logger)
+        public StravaAuthenticationService(ILogger<StravaAuthenticationService> logger, AppOptions options, BotDbContext dbContext, DiscordSocketClient socketClient) : base(dbContext, logger)
         {
-            _logger = _logger;
             _options = options;
             _socketClient = socketClient;
         }
@@ -54,7 +52,7 @@ namespace StravaDiscordBot.Services
 
         public async Task<StravaOauthResponse> ExchangeCodeAsync(string code)
         {
-            _logger.LogInformation("Exchanging strava code");
+            Logger.LogInformation("Exchanging strava code");
             return await PostAsync<StravaOauthResponse>(QueryHelpers.AddQueryString(
                 "https://www.strava.com/oauth/token",
                 new Dictionary<string, string>
@@ -68,7 +66,7 @@ namespace StravaDiscordBot.Services
         }
         public async Task<StravaOauthResponse> RefreshAccessTokenAsync(string refreshToken)
         {
-            _logger.LogInformation("Refreshing access token");
+            Logger.LogInformation("Refreshing access token");
             return await PostAsync<StravaOauthResponse>(QueryHelpers.AddQueryString(
                "https://www.strava.com/oauth/token",
                new Dictionary<string, string>
@@ -95,15 +93,15 @@ namespace StravaDiscordBot.Services
 
         private async Task OnUnauthorizedRetry(Exception e, int retryAttempt, Context context)
         {
-            _logger.LogInformation("OnUnauthorizedRetry");
+            Logger.LogInformation("OnUnauthorizedRetry");
             // Try to refresh access token
             if (retryAttempt == 1 && context.ContainsKey(StravaIdContextKey) && context[StravaIdContextKey] is string stravaId)
             {
-                _logger.LogInformation("First retry attempt, trying to refresh access token");
+                Logger.LogInformation("First retry attempt, trying to refresh access token");
                 var credentials = DbContext.Credentials.FirstOrDefault(x => x.StravaId == stravaId);
                 if (credentials == null)
                 {
-                    _logger.LogError("Couldn't find credentials to refresh");
+                    Logger.LogError("Couldn't find credentials to refresh");
                     // Or throw?
                     return;
                 }
@@ -117,7 +115,7 @@ namespace StravaDiscordBot.Services
                 }
                 catch (ApiException ex)
                 {
-                    _logger.LogWarning(ex, "Refreshing access token failed, DM'ing user to re-join leaderboard");
+                    Logger.LogWarning(ex, "Refreshing access token failed, DM'ing user to re-join leaderboard");
 
                     var participant = DbContext.Participants.FirstOrDefault(x => x.StravaId == stravaId);
                     if (participant != null && ulong.TryParse(participant.DiscordUserId, out var discordUserId))
@@ -137,7 +135,7 @@ namespace StravaDiscordBot.Services
                 }
             }
 
-            _logger.LogWarning("Couldn't find stravaId inside Polly context");
+            Logger.LogWarning("Couldn't find stravaId inside Polly context");
         }
 
         private async Task<T> PostAsync<T>(string url)
@@ -147,7 +145,7 @@ namespace StravaDiscordBot.Services
             var response = await http.PostAsync(url, null).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 $"Call to {GetUrlSuffixWithoutQuery(url)} - {response.StatusCode} Status code");
 
             if (response.IsSuccessStatusCode)
@@ -156,8 +154,8 @@ namespace StravaDiscordBot.Services
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 throw new ApiException((int) response.StatusCode, "Access token expired");
 
-            _logger.LogError($"Failed call to strava - {response.StatusCode}");
-            _logger.LogError(responseContent);
+            Logger.LogError($"Failed call to strava - {response.StatusCode}");
+            Logger.LogError(responseContent);
             throw new ApiException((int) response.StatusCode, "Unknown error");
         }
 

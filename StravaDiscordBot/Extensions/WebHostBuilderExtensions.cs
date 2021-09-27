@@ -37,13 +37,13 @@ namespace StravaDiscordBot.Extensions
                             });
                     }
 
-                    if (options.Discord?.LogWebhooks != null)
-                    {
-                        foreach (var webhook in options.Discord.LogWebhooks)
-                        {
-                            loggerConfig.WriteTo.Discord(webhook.Id, webhook.Token);
-                        }
-                    }
+                    // if (options.Discord?.LogWebhooks != null)
+                    // {
+                    //     foreach (var webhook in options.Discord.LogWebhooks)
+                    //     {
+                    //         loggerConfig.WriteTo.Discord(webhook.Id, webhook.Token);
+                    //     }
+                    // }
 
                     if (options.LogToConsole)
                         loggerConfig.WriteTo.Console();

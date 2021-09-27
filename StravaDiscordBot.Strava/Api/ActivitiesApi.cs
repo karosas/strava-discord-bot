@@ -381,7 +381,7 @@ namespace IO.Swagger.Api
         /// <param name="page">Page number. Defaults to 1. (optional)</param>
         /// <param name="perPage">Number of items per page. Defaults to 30. (optional, default to 30)</param>
         /// <returns>Task of ApiResponse (List&lt;SummaryActivity&gt;)</returns>
-        System.Threading.Tasks.Task<ApiResponse<List<SummaryActivity>>> GetLoggedInAthleteActivitiesAsyncWithHttpInfo (int? before = null, int? after = null, int? page = null, int? perPage = null);
+        System.Threading.Tasks.Task<ApiResponse<List<SummaryActivity>>> GetLoggedInAthleteActivitiesAsyncWithHttpInfo (int? before = null, int? after = null, int? page = null, int? perPage = null, string accessTokenOverride = null);
         /// <summary>
         /// Get Activity Zones
         /// </summary>
