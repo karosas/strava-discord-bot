@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -32,13 +33,24 @@ namespace StravaDiscordBot.Services.HostedService
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _discordClient.Log += LogAsync;
-            _commandService.Log += LogAsync;
+            try
+            {
+                _discordClient.Log += LogAsync;
+                _commandService.Log += LogAsync;
 
-            await _discordClient.LoginAsync(TokenType.Bot, _options.Discord.Token).ConfigureAwait(false);
-            await _discordClient.StartAsync().ConfigureAwait(false);
-
-            await _commandHandlingService.InstallCommandsAsync();
+                _logger.LogInformation("Logging in to Discord");
+                await _discordClient.LoginAsync(TokenType.Bot, _options.Discord.Token).ConfigureAwait(false);
+                
+                _logger.LogInformation("Starting Discord");
+                await _discordClient.StartAsync();
+                
+                _logger.LogInformation("Installing discord commands");
+                await _commandHandlingService.InstallCommandsAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Discord failed");
+            }
         }
         
         private Task LogAsync(LogMessage log)
