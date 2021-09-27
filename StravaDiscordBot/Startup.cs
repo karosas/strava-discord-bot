@@ -170,7 +170,6 @@ namespace StravaDiscordBot
                         await context.Response.WriteAsync(e.Message);
                     }
                 });
-                x.MapControllers();
             });
 
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
