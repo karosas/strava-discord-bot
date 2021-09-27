@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using BetterHostedServices;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -10,7 +11,7 @@ using StravaDiscordBot.Discord;
 
 namespace StravaDiscordBot.Services.HostedService
 {
-    public class DiscordServerHostedService : BackgroundService
+    public class DiscordServerHostedService : CriticalBackgroundService
     {
         private readonly ILogger<DiscordServerHostedService> _logger;
         private readonly AppOptions _options;
@@ -18,11 +19,12 @@ namespace StravaDiscordBot.Services.HostedService
         private readonly CommandService _commandService;
         private readonly CommandHandlingService _commandHandlingService;
         
-        public DiscordServerHostedService(ILogger<DiscordServerHostedService> logger, 
+        public DiscordServerHostedService(IApplicationEnder applicationEnder,
+            ILogger<DiscordServerHostedService> logger, 
             AppOptions options,
             DiscordSocketClient discordClient, 
             CommandService commandService, 
-            CommandHandlingService commandHandlingService)
+            CommandHandlingService commandHandlingService) : base(applicationEnder)
         {
             _logger = logger;
             _options = options;
@@ -39,7 +41,7 @@ namespace StravaDiscordBot.Services.HostedService
                 _commandService.Log += LogAsync;
 
                 _logger.LogInformation("Logging in to Discord");
-                await _discordClient.LoginAsync(TokenType.Bot, _options.Discord.Token).ConfigureAwait(false);
+                await _discordClient.LoginAsync(TokenType.Bot, _options.Discord.Token);
                 
                 _logger.LogInformation("Starting Discord");
                 await _discordClient.StartAsync();

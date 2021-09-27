@@ -15,13 +15,6 @@ namespace StravaDiscordBot
     public class DiscordOptions
     {
         public string Token { get; set; }
-        public DiscordLogWebhook[] LogWebhooks { get; set; }
-    }
-
-    public class DiscordLogWebhook
-    {
-        public ulong Id { get; set; }
-        public string Token { get; set; }
     }
 
     public class StravaOptions

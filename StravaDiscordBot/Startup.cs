@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BetterHostedServices;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -41,6 +42,7 @@ namespace StravaDiscordBot
             Configuration.Bind(appOptions);
             services.AddSingleton(appOptions);
             services.AddLogging(builder => builder.AddSerilog(dispose: true));
+            services.AddBetterHostedServices();
 
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
