@@ -142,6 +142,11 @@ namespace StravaDiscordBot.Services
                 usersRemoved++;
             }
 
+            if (usersRemoved > 0)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+
             return usersRemoved;
         }
 
