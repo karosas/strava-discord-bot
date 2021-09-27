@@ -367,7 +367,7 @@ namespace IO.Swagger.Api
         /// <param name="page">Page number. Defaults to 1. (optional)</param>
         /// <param name="perPage">Number of items per page. Defaults to 30. (optional, default to 30)</param>
         /// <returns>Task of List&lt;SummaryActivity&gt;</returns>
-        System.Threading.Tasks.Task<List<SummaryActivity>> GetLoggedInAthleteActivitiesAsync (int? before = null, int? after = null, int? page = null, int? perPage = null);
+        System.Threading.Tasks.Task<List<SummaryActivity>> GetLoggedInAthleteActivitiesAsync (int? before = null, int? after = null, int? page = null, int? perPage = null, string accessTokenOverride = null);
 
         /// <summary>
         /// List Athlete Activities
@@ -1428,9 +1428,9 @@ namespace IO.Swagger.Api
         /// <param name="page">Page number. Defaults to 1. (optional)</param>
         /// <param name="perPage">Number of items per page. Defaults to 30. (optional, default to 30)</param>
         /// <returns>Task of List&lt;SummaryActivity&gt;</returns>
-        public async System.Threading.Tasks.Task<List<SummaryActivity>> GetLoggedInAthleteActivitiesAsync (int? before = null, int? after = null, int? page = null, int? perPage = null)
+        public async System.Threading.Tasks.Task<List<SummaryActivity>> GetLoggedInAthleteActivitiesAsync (int? before = null, int? after = null, int? page = null, int? perPage = null, string accessTokenOverride = null)
         {
-             ApiResponse<List<SummaryActivity>> localVarResponse = await GetLoggedInAthleteActivitiesAsyncWithHttpInfo(before, after, page, perPage);
+             ApiResponse<List<SummaryActivity>> localVarResponse = await GetLoggedInAthleteActivitiesAsyncWithHttpInfo(before, after, page, perPage, accessTokenOverride);
              return localVarResponse.Data;
 
         }
@@ -1444,7 +1444,7 @@ namespace IO.Swagger.Api
         /// <param name="page">Page number. Defaults to 1. (optional)</param>
         /// <param name="perPage">Number of items per page. Defaults to 30. (optional, default to 30)</param>
         /// <returns>Task of ApiResponse (List&lt;SummaryActivity&gt;)</returns>
-        public async System.Threading.Tasks.Task<ApiResponse<List<SummaryActivity>>> GetLoggedInAthleteActivitiesAsyncWithHttpInfo (int? before = null, int? after = null, int? page = null, int? perPage = null)
+        public async System.Threading.Tasks.Task<ApiResponse<List<SummaryActivity>>> GetLoggedInAthleteActivitiesAsyncWithHttpInfo (int? before = null, int? after = null, int? page = null, int? perPage = null, string accessTokenOverride = null)
         {
 
             var localVarPath = "/athlete/activities";
@@ -1475,7 +1475,11 @@ namespace IO.Swagger.Api
 
             // authentication (strava_oauth) required
             // oauth required
-            if (!String.IsNullOrEmpty(this.Configuration.AccessToken))
+            if (!String.IsNullOrEmpty(accessTokenOverride))
+            {
+                localVarHeaderParams["Authorization"] = "Bearer " + accessTokenOverride;
+            }
+            else if (!String.IsNullOrEmpty(this.Configuration.AccessToken))
             {
                 localVarHeaderParams["Authorization"] = "Bearer " + this.Configuration.AccessToken;
             }

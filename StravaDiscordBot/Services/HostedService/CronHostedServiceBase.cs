@@ -54,9 +54,6 @@ namespace StravaDiscordBot.Services.HostedService
             await Task.CompletedTask.ConfigureAwait(false);
         }
 
-        public virtual async Task DoWork(CancellationToken cancellationToken)
-        {
-            await Task.Delay(5000, cancellationToken).ConfigureAwait(false); // do the work
-        }
+        protected abstract Task DoWork(CancellationToken cancellationToken);
     }
 }

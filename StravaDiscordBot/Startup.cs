@@ -83,7 +83,8 @@ namespace StravaDiscordBot
             // Hosted services
 
             services.AddHostedService<WeeklyLeaderboardHostedService>();
-            services.AddHostedService<ParticipantCleanupHostedService>();
+            //services.AddHostedService<ParticipantCleanupHostedService>();
+            services.AddHostedService<DiscordServerHostedService>();
 
             // API
 
@@ -116,33 +117,8 @@ namespace StravaDiscordBot
                 var dbContext = serviceScope.ServiceProvider.GetService<BotDbContext>();
                 dbContext.Database.EnsureCreated();
             }
-
-            StartDiscordBot(app, logger)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
         }
 
-        private async Task StartDiscordBot(IApplicationBuilder app, ILogger<Startup> logger)
-        {
-            _logger = logger;
-            _logger.LogInformation("test");
-            var options = app.ApplicationServices.GetService<AppOptions>();
-            DiscordClient = app.ApplicationServices.GetRequiredService<DiscordSocketClient>();
-            DiscordClient.Log += LogAsync;
-            app.ApplicationServices.GetRequiredService<CommandService>().Log += LogAsync;
-            
-            await DiscordClient.LoginAsync(TokenType.Bot, options.Discord.Token).ConfigureAwait(false);
-            await DiscordClient.StartAsync().ConfigureAwait(false);
 
-            CommandHandlingService = app.ApplicationServices.GetService<CommandHandlingService>();
-            await CommandHandlingService.InstallCommandsAsync();
-        }
-
-        private Task LogAsync(LogMessage log)
-        {
-            _logger.LogInformation(log.Exception, $"[{log.Severity}] {log.Message}");
-            return Task.CompletedTask;
-        }
     }
 }

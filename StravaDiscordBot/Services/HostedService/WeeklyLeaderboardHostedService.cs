@@ -29,9 +29,7 @@ namespace StravaDiscordBot.Services.HostedService
             _leaderboardService = leaderboardService;
         }
 
-
-        //var channel = _discordSocketClient.GetChannel(ulong.Parse(leaderboard.ChannelId)) as SocketTextChannel;
-        public override async Task DoWork(CancellationToken cancellationToken)
+        protected override async Task DoWork(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Executing leaderboard hosted service");
             var start = DateTime.Now.AddDays(-7);

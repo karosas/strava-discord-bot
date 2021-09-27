@@ -1,51 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Utilities;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
-using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
-using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Discord.Modules
 {
     [RequireRole(new[] {"Owner", "Bot Manager"})]
     public class AdminModule : ModuleBase<SocketCommandContext>
     {
-        private readonly IEmbedBuilderService _embedBuilderService;
         private readonly ILeaderboardService _leaderboardService;
         private readonly ILogger<AdminModule> _logger;
         private readonly ILeaderboardParticipantService _participantService;
         private readonly IRoleService _roleService;
-        private readonly IStravaCredentialService _stravaCredentialService;
-        private readonly IAthleteService _athleteService;
-        private readonly IActivitiesService _activitiesService;
-        private readonly IStravaAuthenticationService _stravaAuthenticationService;
 
         public AdminModule(
             ILogger<AdminModule> logger,
-            IEmbedBuilderService embedBuilderService,
             ILeaderboardParticipantService participantService,
             ILeaderboardService leaderboardResultService,
-            IRoleService roleService,
-            IStravaCredentialService stravaCredentialService,
-            IAthleteService athleteService,
-            IActivitiesService activitiesService,
-            IStravaAuthenticationService stravaAuthenticationService)
+            IRoleService roleService)
         {
             _logger = logger;
-            _embedBuilderService = embedBuilderService;
             _participantService = participantService;
             _leaderboardService = leaderboardResultService;
             _roleService = roleService;
-            _stravaCredentialService = stravaCredentialService;
-            _athleteService = athleteService;
-            _activitiesService = activitiesService;
-            this._stravaAuthenticationService = stravaAuthenticationService;
         }
 
         [Command("init")]
@@ -133,15 +114,16 @@ namespace StravaDiscordBot.Discord.Modules
         
         [Command("prune")]
         [Summary(
-            "[ADMIN] Remove leaderboard participants who're no longer part of the server Usage: `@mention prune`")]
+            "[ADMIN] Remove leaderboard participants who're no longer part of the server Usage: `@mention prune` or `@mention prune --dryrun` to see how much users it'd remove without actually removing them")]
         [RequireToBeWhitelistedServer]
-        public async Task PruneUsers()
+        public async Task PruneUsers([Remainder]string text = "")
         {
             using (Context.Channel.EnterTypingState())
             {
                 try
                 {
-                    var usersRemoved = await _leaderboardService.PruneUsers(Context.Guild.Id.ToString());
+                    var dryRun = text?.Contains("--dryrun") ?? false;
+                    var usersRemoved = await _leaderboardService.PruneUsers(Context.Guild.Id.ToString(), dryRun);
                     await ReplyAsync($"Removed {usersRemoved} users");
                 }
                 catch (Exception e)

@@ -1,9 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using StravaDiscordBot.Storage;
 
 namespace StravaDiscordBot.Services.HostedService
@@ -24,13 +22,13 @@ namespace StravaDiscordBot.Services.HostedService
             _dbContext = dbContext;
         }
 
-        public override async Task DoWork(CancellationToken cancellationToken)
+        protected override async Task DoWork(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting participant cleanup");
 
             foreach (var leaderboard in _dbContext.Leaderboards)
             {
-                await _leaderboardService.PruneUsers(leaderboard.ServerId);
+                await _leaderboardService.PruneUsers(leaderboard.ServerId, false);
             }
 
             _logger.LogInformation("Cleanup done");

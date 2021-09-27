@@ -4,11 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord;
-using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
@@ -22,7 +19,7 @@ namespace StravaDiscordBot.Services
         Task<Leaderboard> GetForServer(string serverId);
         Task Create(Leaderboard leaderboard);
         Task GenerateForServer(IMessageChannel replyChannel, string serverId, DateTime start, bool grantWinnerRole, params ICategory[] categories);
-        Task<int> PruneUsers(string serverId);
+        Task<int> PruneUsers(string serverId, bool dryRun);
     }
 
     public class LeaderboardService : ILeaderboardService
@@ -43,7 +40,8 @@ namespace StravaDiscordBot.Services
             ILeaderboardParticipantService participantService,
             IStravaAuthenticationService stravaAuthenticationService,
             IActivitiesService activitiesService,
-            IEmbedBuilderService embedBuilderService, DiscordSocketClient discordSocketClient)
+            IEmbedBuilderService embedBuilderService, 
+            DiscordSocketClient discordSocketClient)
         {
             _dbContext = dbContext;
             _logger = logger;
@@ -108,19 +106,16 @@ namespace StravaDiscordBot.Services
             if (grantWinnerRole)
             {
                 var winners = new List<ParticipantResult>();
-                foreach (var categoryResult in categoryResults)
+                foreach (var subCategoryResult in categoryResults.SelectMany(categoryResult => categoryResult.SubCategoryResults))
                 {
-                    foreach (var subCategoryResult in categoryResult.SubCategoryResults)
-                    {
-                        winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
-                    }
+                    winners.AddRange(subCategoryResult.OrderedParticipantResults.Take(3));
                 }
 
                 await GrantWinnerRoles(serverId, winners);
             }
         }
 
-        public async Task<int> PruneUsers(string serverId)
+        public async Task<int> PruneUsers(string serverId, bool dryRun)
         {
             var leaderboard = await _dbContext.Leaderboards.FirstOrDefaultAsync(x => x.ServerId == serverId);
             if (leaderboard == null)
@@ -130,17 +125,21 @@ namespace StravaDiscordBot.Services
             }
             
             var guild = _discordSocketClient.GetGuild(ulong.Parse(leaderboard.ServerId));
-
+            var nestedGuildUsers = await guild.GetUsersAsync().ToListAsync();
+            var guildUsers = nestedGuildUsers.SelectMany(x => x).ToList();
+            
             var usersRemoved = 0;
             _logger.LogInformation($"Cleaning up server {leaderboard.ServerId}");
             foreach (var participant in _dbContext.Participants.AsQueryable().Where(x => x.ServerId == leaderboard.ServerId))
             {
-                if (!guild.TryGetUser(participant.DiscordUserId, out _))
-                {
-                    _logger.LogInformation($"Removing user '{participant.DiscordUserId}' ({participant.GetDiscordMention()}' from '{leaderboard.ServerId}'");
+                // If we found discord user in this server with matching id -> continue
+                if (guildUsers.Any(guildUser => guildUser.Id.ToString() == participant.DiscordUserId)) 
+                    continue;
+                
+                _logger.LogInformation($"Removing user '{participant.DiscordUserId}' ({participant.GetDiscordMention()}' from '{leaderboard.ServerId}'");
+                if(!dryRun)
                     _dbContext.Participants.Remove(participant);
-                    usersRemoved++;
-                }
+                usersRemoved++;
             }
 
             return usersRemoved;

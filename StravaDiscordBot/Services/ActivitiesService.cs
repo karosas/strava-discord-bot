@@ -31,12 +31,8 @@ namespace StravaDiscordBot.Services
             try
             {
                 Logger.LogInformation($"Fetching activities for strava id {stravaId}");
-
-                // This is going to end up in being a race condition, won't it...?
-                _activitiesApi.Configuration.AccessToken = credentials.AccessToken;
-
                 // It is a bit silly not to implement pagination properly, but no user should have more than 100 activities done in a week for leaderboard... hopefully..
-                return await _activitiesApi.GetLoggedInAthleteActivitiesAsync(after: (int) after.GetEpochTimestamp(), perPage: 100);
+                return await _activitiesApi.GetLoggedInAthleteActivitiesAsync(after: (int) after.GetEpochTimestamp(), perPage: 100, accessTokenOverride: credentials.AccessToken);
             }
             catch (Exception e)
             {

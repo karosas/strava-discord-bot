@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 using IO.Swagger.Client;
 using Microsoft.AspNetCore.WebUtilities;
@@ -33,9 +32,9 @@ namespace StravaDiscordBot.Services
         private readonly AppOptions _options;
         private readonly DiscordSocketClient _socketClient;
 
-        public StravaAuthenticationService(ILogger<StravaAuthenticationService> logger, AppOptions options, BotDbContext dbContext, DiscordSocketClient socketClient) : base(dbContext, logger)
+        public StravaAuthenticationService(ILogger<StravaAuthenticationService> _logger, AppOptions options, BotDbContext dbContext, DiscordSocketClient socketClient) : base(dbContext, _logger)
         {
-            _logger = logger;
+            _logger = _logger;
             _options = options;
             _socketClient = socketClient;
         }
@@ -55,7 +54,7 @@ namespace StravaDiscordBot.Services
 
         public async Task<StravaOauthResponse> ExchangeCodeAsync(string code)
         {
-            Logger.LogInformation("Exchanging strava code");
+            _logger.LogInformation("Exchanging strava code");
             return await PostAsync<StravaOauthResponse>(QueryHelpers.AddQueryString(
                 "https://www.strava.com/oauth/token",
                 new Dictionary<string, string>
@@ -69,7 +68,7 @@ namespace StravaDiscordBot.Services
         }
         public async Task<StravaOauthResponse> RefreshAccessTokenAsync(string refreshToken)
         {
-            Logger.LogInformation("Refreshing access token");
+            _logger.LogInformation("Refreshing access token");
             return await PostAsync<StravaOauthResponse>(QueryHelpers.AddQueryString(
                "https://www.strava.com/oauth/token",
                new Dictionary<string, string>
@@ -83,8 +82,10 @@ namespace StravaDiscordBot.Services
 
         public (AsyncRetryPolicy policy, Context context) GetUnauthorizedPolicy(string stravaId)
         {
-            var pollyContext = new Context();
-            pollyContext[StravaIdContextKey] = stravaId;
+            var pollyContext = new Context
+            {
+                [StravaIdContextKey] = stravaId
+            };
 
             return (Policy
                     .Handle<StravaException>()
@@ -102,7 +103,7 @@ namespace StravaDiscordBot.Services
                 var credentials = DbContext.Credentials.FirstOrDefault(x => x.StravaId == stravaId);
                 if (credentials == null)
                 {
-                    Logger.LogError("Couldn't find credentials to refresh");
+                    _logger.LogError("Couldn't find credentials to refresh");
                     // Or throw?
                     return;
                 }
@@ -136,7 +137,7 @@ namespace StravaDiscordBot.Services
                 }
             }
 
-            Logger.LogWarning("Couldn't find stravaId inside Polly context");
+            _logger.LogWarning("Couldn't find stravaId inside Polly context");
         }
 
         private async Task<T> PostAsync<T>(string url)
@@ -146,7 +147,7 @@ namespace StravaDiscordBot.Services
             var response = await http.PostAsync(url, null).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            Logger.LogInformation(
+            _logger.LogInformation(
                 $"Call to {GetUrlSuffixWithoutQuery(url)} - {response.StatusCode} Status code");
 
             if (response.IsSuccessStatusCode)
@@ -155,8 +156,8 @@ namespace StravaDiscordBot.Services
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 throw new ApiException((int) response.StatusCode, "Access token expired");
 
-            Logger.LogError($"Failed call to strava - {response.StatusCode}");
-            Logger.LogError(responseContent);
+            _logger.LogError($"Failed call to strava - {response.StatusCode}");
+            _logger.LogError(responseContent);
             throw new ApiException((int) response.StatusCode, "Unknown error");
         }
 
