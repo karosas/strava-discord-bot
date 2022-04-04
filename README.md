@@ -23,3 +23,4 @@ After recent rework I attempted to redesign the leaderboard so it would be much 
 **Note -** Keep in mind that that currently we're generating 1 embed per category and all display data (titles, winners, etc.) are added as embed fields. This is a slight problem, because Discord has a limit of 25 fields. 1 sub-category adds 4 fields (title and top 3 winners). At the moment categories have 4 sub categories, so we're already using 17 fields (4 sub-categories (16 fields) + 1 fields for title with category, date).
 
 Other suggestions are welcome as well.
+
