@@ -1,43 +1,21 @@
-*.swp
-*.*~
-project.lock.json
-.DS_Store
-*.pyc
-nupkg/
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+#
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# Visual Studio Code
-.vscode
+# Test binary, built with `go test -c`
+*.test
 
-# Rider
-.idea
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
 
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+# Dependency directories (remove the comment below to include it)
+# vendor/
 
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-bld/
-[Bb]in/
-[Oo]bj/
-[Oo]ut/
-msbuild.log
-msbuild.err
-msbuild.wrn
-
-# Visual Studio 2015
-.vs/
-
-Properties/PublishProfiles/
-publish.ps1
-leaderboard.db
-*.db
-*.pubxml
+# Go workspace file
+go.work
