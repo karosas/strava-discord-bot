@@ -88,6 +88,7 @@ namespace StravaDiscordBot
             services.AddHostedService<WeeklyLeaderboardHostedService>();
             //services.AddHostedService<ParticipantCleanupHostedService>();
             services.AddHostedService<DiscordServerHostedService>();
+            services.AddHostedService<ContainsReplyService>();
 
             // API
 
