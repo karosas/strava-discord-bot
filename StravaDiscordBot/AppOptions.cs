@@ -10,6 +10,7 @@ namespace StravaDiscordBot
         public LokiOptions Loki { get; set; }
         public string BaseUrl { get; set; }
         public bool LogToConsole { get; set; }
+        public ContainsReplyOptions[] ContainsReplies { get; set; }
     }
 
     public class DiscordOptions
@@ -28,5 +29,11 @@ namespace StravaDiscordBot
         public string Url { get; set; }
         public string User { get; set; }
         public string Password { get; set; }
+    }
+
+    public class ContainsReplyOptions
+    {
+        public string Contains { get; set; }
+        public string Response { get; set; }
     }
 }
