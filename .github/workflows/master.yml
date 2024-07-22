@@ -30,6 +30,7 @@ jobs:
           port: ${{ secrets.PORT }}
           source: /home/runner/work/strava-discord-bot/strava-discord-bot/deploy/
           target: /root/bot/src/ 
+          timeout: 600s
 
       - name: Restart bot
         uses: appleboy/ssh-action@v1.0.3
@@ -38,3 +39,4 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
+          timout: 300s
