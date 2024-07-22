@@ -21,7 +21,7 @@ jobs:
       - name: Build & Publish
         run: dotnet publish -c Release -o deploy
       - name: Copy via ssh
-        uses: garygrossgarten/github-action-scp@v0.9.0
+        uses: garygrossgarten/github-action-scp@0.9.0
         with:
           local: /home/runner/work/strava-discord-bot/strava-discord-bot/deploy/
           remote: /root/bot/src/ 
