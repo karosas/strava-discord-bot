@@ -30,9 +30,9 @@ jobs:
           port: ${{ secrets.PORT }}
           source: /home/runner/work/strava-discord-bot/strava-discord-bot/deploy/
           target: /root/bot/src/ 
-          
+
       - name: Restart bot
-        uses: appleboy/ssh-action@1.0.3
+        uses: appleboy/ssh-action@v1.0.3
         with:
           script: sudo systemctl stop ${{ secrets.REMOTE_SERVICE_NAME }} && sudo systemctl start ${{ secrets.REMOTE_SERVICE_NAME }}
           host: ${{ secrets.REMOTE_HOST }}
