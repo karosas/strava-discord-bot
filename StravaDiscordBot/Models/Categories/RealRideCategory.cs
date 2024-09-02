@@ -21,9 +21,18 @@ namespace StravaDiscordBot.Models.Categories
         public List<SummaryActivity> FilterActivities(List<SummaryActivity> activities)
         {
             if(activities?.Any() ?? false)
-                return activities.Where(x => x.Type == ActivityType.Ride).ToList();
+                return activities.Where(ActivityIsRealRide).ToList();
 
             return new List<SummaryActivity>();
+        }
+
+        private static bool ActivityIsRealRide(SummaryActivity activity)
+        {
+            // If the ride counts as virtual, it does not belong here.
+            if(VirtualRideCategory.ActivityIsVirtual(activity))
+                return false;
+            
+            return activity.Type == ActivityType.Ride;
         }
     }
 }
