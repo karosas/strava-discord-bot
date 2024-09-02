@@ -10,6 +10,7 @@ namespace StravaDiscordBot.Models.Categories
     public class VirtualRideCategory : ICategory
     {
         public string Name => Constants.CategoryTypes.VirtualRide;
+        public const string IndoorRideName = "Indoor Cycling";
 
         public List<ISubCategory> SubCategories => new List<ISubCategory>
         {
@@ -22,9 +23,20 @@ namespace StravaDiscordBot.Models.Categories
         public List<SummaryActivity> FilterActivities(List<SummaryActivity> activities)
         {
             if (activities?.Any() ?? false)
-                return activities.Where(x => x.Type == ActivityType.VirtualRide).ToList();
+                return activities.Where(ActivityIsVirtual).ToList();
 
             return new List<SummaryActivity>();
+        }
+
+        public static bool ActivityIsVirtual(SummaryActivity activity)
+        {
+            if(activity.Type == ActivityType.VirtualRide)
+                return true;
+
+            if(activity.Name == IndoorRideName)
+                return true;
+
+            return false;
         }
     }
 }
