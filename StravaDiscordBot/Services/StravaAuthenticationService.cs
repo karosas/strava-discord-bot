@@ -123,7 +123,7 @@ namespace StravaDiscordBot.Services
                         var user = _socketClient.GetUser(discordUserId);
                         if (user != null)
                         {
-                            var channel = await user.GetOrCreateDMChannelAsync();
+                            var channel = await user.CreateDMChannelAsync();
                             if (channel != null)
                             {
                                 await channel.SendMessageAsync(

@@ -9,7 +9,7 @@ using StravaDiscordBot.Services;
 
 namespace StravaDiscordBot.Discord.Modules
 {
-    [RequireRole(new[] {"Owner", "Bot Manager"})]
+    [Utilities.RequireRole(new[] {"Owner", "Bot Manager"})]
     public class AdminModule : ModuleBase<SocketCommandContext>
     {
         private readonly ILeaderboardService _leaderboardService;

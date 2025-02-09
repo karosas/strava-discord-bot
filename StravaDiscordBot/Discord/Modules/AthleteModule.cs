@@ -6,7 +6,6 @@ using Discord;
 using Discord.Commands;
 using IO.Swagger.Client;
 using Microsoft.Extensions.Logging;
-using StravaDiscordBot.Discord.Modules.NamedArgs;
 using StravaDiscordBot.Discord.Utilities;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
@@ -40,7 +39,7 @@ namespace StravaDiscordBot.Discord.Modules
         [Command("list")]
         [Summary("[ADMIN] Lists participants for server")]
         [RequireToBeWhitelistedServer]
-        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        [Utilities.RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task ListLeaderboardParticipants()
         {
             using (Context.Channel.EnterTypingState())
@@ -85,7 +84,7 @@ namespace StravaDiscordBot.Discord.Modules
         [Command("profile")]
         [Summary("Get your profile")]
         [RequireToBeWhitelistedServer]
-        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        [Utilities.RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task GetDetailedParticipant()
         {
             var id = Context.User.Id.ToString();
@@ -110,7 +109,7 @@ namespace StravaDiscordBot.Discord.Modules
         [Command("profile")]
         [Summary("[ADMIN] Get detailed information of the participant by discord user ID. Usage: `@mention get 1234`")]
         [RequireToBeWhitelistedServer]
-        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        [Utilities.RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task GetDetailedParticipant(string id)
         {
             using (Context.Channel.EnterTypingState())
@@ -137,7 +136,7 @@ namespace StravaDiscordBot.Discord.Modules
         [Command("remove")]
         [Summary("[ADMIN] Remove user from leaderboard by discord user ID. Usage: `@mention remove 1234`")]
         [RequireToBeWhitelistedServer]
-        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        [Utilities.RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task RemoveParticipant(string discordId)
         {
             using (Context.Channel.EnterTypingState())

@@ -6,8 +6,6 @@ using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Utilities;
-using StravaDiscordBot.Exceptions;
-using StravaDiscordBot.Helpers;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
