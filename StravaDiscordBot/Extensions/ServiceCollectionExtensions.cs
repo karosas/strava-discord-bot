@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Exceptions;
@@ -10,21 +11,19 @@ using LokiCredentials = Serilog.Sinks.Grafana.Loki.LokiCredentials;
 
 namespace StravaDiscordBot.Extensions
 {
-    public static class WebHostBuilderExtensions
+    public static class ServiceCollectionExtensions
     {
-        public static IWebHostBuilder UseSerilog(this IWebHostBuilder hostBuilder)
+        public static IServiceCollection AddSerilogX(this IServiceCollection services, IConfiguration configuration)
         {
-            return hostBuilder
-                .UseSerilog((builderContext, loggerConfig) =>
+            return services
+                .AddSerilog((builderContext, loggerConfig) =>
                 {
                     loggerConfig.Enrich.FromLogContext();
                     loggerConfig.Enrich.WithExceptionDetails();
-                    loggerConfig.Enrich.WithProperty("Environment", builderContext.HostingEnvironment.EnvironmentName);
-                    loggerConfig.Enrich.WithProperty("Type", "DiscordStravaBot");
                     loggerConfig.MinimumLevel.Debug();
 
                     var options = new AppOptions();
-                    builderContext.Configuration.Bind(options);
+                    configuration.Bind(options);
 
                     if (options.Loki != null)
                     {

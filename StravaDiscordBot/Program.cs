@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using StravaDiscordBot.Extensions;
+using StravaDiscordBot.Helpers;
 
 namespace StravaDiscordBot
 {
@@ -14,7 +15,10 @@ namespace StravaDiscordBot
         private static IWebHostBuilder CreateHostBuilder(string[] args)
         {
             return WebHost.CreateDefaultBuilder(args)
-                .UseSerilog()
+                .ConfigureAppConfiguration(config =>
+                {
+                    config.Add(new DotEnvConfigurationSource());
+                })
                 .UseStartup<Startup>();
         }
     }

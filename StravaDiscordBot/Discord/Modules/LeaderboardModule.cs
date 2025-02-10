@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using StravaDiscordBot.Discord.Modules.NamedArgs;
 using StravaDiscordBot.Discord.Utilities;
-using StravaDiscordBot.Helpers;
-using StravaDiscordBot.Models;
 using StravaDiscordBot.Models.Categories;
 using StravaDiscordBot.Services;
 
@@ -38,7 +34,7 @@ namespace StravaDiscordBot.Discord.Modules
                 {
                     var text = $"Hey, {Context.User.Mention} ! Please go to the following url to authorize me to view your Strava activities: {_stravaAuthenticationService.GetOAuthUrl(Context.Guild.Id.ToString(), Context.User.Id.ToString())}";
 
-                    var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
+                    var dmChannel = await Context.User.CreateDMChannelAsync();
                     await dmChannel.SendMessageAsync(text);
                 }
                 catch (Exception e)
@@ -51,7 +47,7 @@ namespace StravaDiscordBot.Discord.Modules
         [Command("leaderboard")]
         [Summary("[ADMIN] Manually triggers leaderboard in channel written")]
         [RequireToBeWhitelistedServer]
-        [RequireRole(new[] { "Owner", "Bot Manager" })]
+        [Utilities.RequireRole(new[] { "Owner", "Bot Manager" })]
         public async Task ShowLeaderboard(LeaderboardNamedArgs leaderboardArguments)
         {
             using (Context.Channel.EnterTypingState())
