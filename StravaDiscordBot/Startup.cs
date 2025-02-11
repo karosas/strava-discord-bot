@@ -83,7 +83,7 @@ namespace StravaDiscordBot
             services.AddHostedService<DiscordServerHostedService>();
 
             // API
-
+            services.AddHttpLogging();
             services.AddControllers();
             services.AddMvc();
         }
@@ -93,6 +93,7 @@ namespace StravaDiscordBot
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
+            app.UseHttpLogging();
             app.UseRouting();
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
