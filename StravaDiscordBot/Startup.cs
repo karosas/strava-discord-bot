@@ -13,10 +13,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using StravaDiscordBot.Discord;
 using StravaDiscordBot.Discord.Modules;
-using StravaDiscordBot.Extensions;
 using StravaDiscordBot.Models;
 using StravaDiscordBot.Services;
 using StravaDiscordBot.Services.HostedService;
@@ -38,8 +36,6 @@ namespace StravaDiscordBot
             var appOptions = new AppOptions();
             Configuration.Bind(appOptions);
             services.AddSingleton(appOptions);
-            services.AddLogging(builder => builder.AddSerilog(dispose: true));
-            services.AddSerilogX(Configuration);
             
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
@@ -70,7 +66,7 @@ namespace StravaDiscordBot
 
             // Strava API CLient
 
-            services.AddSingleton(typeof(Configuration), new Configuration());
+            services.AddSingleton(new Configuration());
             services.AddSingleton<IActivitiesApi, ActivitiesApi>();
             services.AddSingleton<IAthletesApi, AthletesApi>();
 
@@ -98,7 +94,6 @@ namespace StravaDiscordBot
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
             app.UseRouting();
-            app.UseSerilogRequestLogging();
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
