@@ -102,6 +102,7 @@ namespace StravaDiscordBot
 
             app.UseEndpoints(x =>
             {
+                x.MapGet("/healthz", async context =>await  context.Response.WriteAsync("Healthy")); 
                 x.MapGet("/strava/callback/{serverId}/{discordUserId}", async context =>
                 {
                     if (!context.Request.Query.TryGetValue("scope", out var scope) ||
